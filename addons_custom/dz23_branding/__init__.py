@@ -28,5 +28,20 @@ def post_init_hook(env):
         if root and root.name != "DZ23 Bot":
             root.sudo().write({"name": "DZ23 Bot"})
             _logger.info("DZ23 branding: bot do sistema renomeado para DZ23 Bot")
+    except Exception as e:  # noqa: BLE001
+        _logger.warning("DZ23 branding: falha no rename do bot: %s", e)
+    try:
+        # Dados da empresa + branding do site público (e-commerce), se instalado.
+        company = env.ref("base.main_company", raise_if_not_found=False)
+        if company:
+            if not company.phone:
+                company.sudo().write({"phone": "+55 61 98100-3000"})
+        if company and "website" in env.registry:
+            for site in env["website"].sudo().search([]):
+                vals = {"name": "DZ23 CRM"}
+                if "logo" in site._fields and company.logo:
+                    vals["logo"] = company.logo
+                site.write(vals)
+            _logger.info("DZ23 branding: site público rebrandado (DZ23 CRM).")
     except Exception as e:  # noqa: BLE001 - não pode quebrar a instalação
         _logger.warning("DZ23 branding: falha ao ativar %s: %s", lang_code, e)
