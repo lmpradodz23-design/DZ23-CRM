@@ -34,8 +34,20 @@ def post_init_hook(env):
         # Dados da empresa + branding do site público (e-commerce), se instalado.
         company = env.ref("base.main_company", raise_if_not_found=False)
         if company:
+            vals = {}
             if not company.phone:
-                company.sudo().write({"phone": "+55 61 98100-3000"})
+                vals["phone"] = "+55 61 98100-3000"
+            br = env.ref("base.br", raise_if_not_found=False)
+            if br:
+                vals["country_id"] = br.id
+            brl = env["res.currency"].with_context(active_test=False).search(
+                [("name", "=", "BRL")], limit=1)
+            if brl:
+                if not brl.active:
+                    brl.sudo().write({"active": True})
+                vals["currency_id"] = brl.id
+            if vals:
+                company.sudo().write(vals)
         if company and "website" in env.registry:
             for site in env["website"].sudo().search([]):
                 vals = {"name": "DZ23 CRM"}
