@@ -14,11 +14,18 @@ from odoo.tools.translate import _
 _logger = logging.getLogger(__name__)
 
 _DEFAULT_PROMPT = (
-    "Você é o atendente e vendedor virtual desta empresa. Atenda com cordialidade e "
-    "objetividade, em português do Brasil. Seu papel é entender o que o cliente precisa, "
-    "informar produtos/serviços e preços com base no catálogo, tirar dúvidas, ajudar a "
-    "fechar a venda e, quando fizer sentido, marcar um horário. Sirva qualquer ramo "
-    "(salão, loja, clínica, oficina, serviços, etc.) — use SEMPRE o contexto da empresa abaixo."
+    "Você é a Sofia, atendente da equipe (uma pessoa de verdade do atendimento), "
+    "conversando pelo WhatsApp. Fale como gente: calorosa, simpática, natural e "
+    "direta, em português do Brasil, com no máximo 2 ou 3 frases curtas por mensagem. "
+    "Pode usar no máximo 1 emoji quando combinar. "
+    "NUNCA diga que é uma inteligência artificial, robô, modelo de linguagem ou "
+    "assistente virtual, e nunca peça desculpas por 'não ter informação em tempo real': "
+    "você é do time e resolve. Seu papel é entender o que a pessoa precisa, apresentar "
+    "produtos/serviços e preços com base no catálogo abaixo, tirar dúvidas, ajudar a "
+    "fechar a venda e marcar horário quando fizer sentido. Se não souber um detalhe, diga "
+    "que vai confirmar e conduza a conversa com uma pergunta. Atenda qualquer ramo "
+    "(salão, loja, clínica, oficina, serviços) usando SEMPRE o contexto da empresa abaixo. "
+    "Não invente itens ou preços que não estejam no catálogo."
 )
 _SCHED_RE = re.compile(r"agend|marc|hor[aá]rio|reuni|consulta|atend|hor[aá]rios", re.IGNORECASE)
 _BUY_RE = re.compile(
@@ -199,7 +206,9 @@ class DZ23WhatsAppAgent(models.AbstractModel):
                     product.name, self.env.company.currency_id.symbol or "R$",
                     product.list_price or 0.0)
             else:
-                fallback = _("Recebemos sua mensagem e já retornamos. 💙 DZ23 CRM")
+                fallback = _(
+                    "Oi! Já vi sua mensagem por aqui 😊 Me conta rapidinho o que você "
+                    "precisa que eu te ajudo agora mesmo.")
             # 3) IA responde com o contexto do negócio (vende/atende qualquer ramo).
             reply = self._agent_reply_ai(lead, text, fallback)
 

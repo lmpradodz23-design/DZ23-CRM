@@ -38,12 +38,12 @@ class DZ23AI(models.AbstractModel):
 
     def _default_model(self):
         return {
-            "ollama": "llama3.1",
+            "ollama": "llama3.2:3b",
             "groq": "llama-3.3-70b-versatile",
             "google": "gemini-1.5-flash",
             "openai": "gpt-4o-mini",
             "anthropic": "claude-3-5-sonnet-latest",
-        }.get(self._provider(), "llama3.1")
+        }.get(self._provider(), "llama3.2:3b")
 
     def _post(self, url, **kwargs):
         try:
@@ -83,7 +83,18 @@ class DZ23AI(models.AbstractModel):
         messages = ([{"role": "system", "content": system}] if system else []) + [msg]
         data = self._post(
             "%s/api/chat" % base,
-            json={"model": self._model(), "messages": messages, "stream": False},
+            json={
+                "model": self._model(),
+                "messages": messages,
+                "stream": False,
+                # Respostas naturais porém curtas e estáveis (tom de WhatsApp).
+                "options": {
+                    "temperature": 0.6,
+                    "top_p": 0.9,
+                    "repeat_penalty": 1.2,
+                    "num_predict": 220,
+                },
+            },
         )
         return (data.get("message") or {}).get("content", "")
 
