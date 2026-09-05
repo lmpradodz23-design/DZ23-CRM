@@ -10,7 +10,7 @@
     "website": "https://www.dz23.com.br",
     "license": "LGPL-3",
     "category": "Marketing",
-    "depends": ["dz23_whatsapp", "dz23_ai", "crm", "calendar", "phone_validation"],
+    "depends": ["dz23_whatsapp", "dz23_ai", "crm", "calendar", "phone_validation", "sale_management"],
     "data": [
         "data/config_params.xml",
         "views/res_config_settings_views.xml",

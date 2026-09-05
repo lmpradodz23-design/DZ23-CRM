@@ -1,0 +1,44 @@
+# Stack Evolution API (WhatsApp não-oficial) para teste local do DZ23 CRM.
+# Sobe Evolution + Postgres + Redis. Chave de API é de DEV (local).
+services:
+  evo-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: evolution
+      POSTGRES_USER: evo
+      POSTGRES_PASSWORD: evo_dev
+    volumes:
+      - evo-db:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  evo-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  evolution-api:
+    image: evoapicloud/evolution-api:latest
+    depends_on:
+      - evo-db
+      - evo-redis
+    ports:
+      - "8080:8080"
+    environment:
+      AUTHENTICATION_API_KEY: DZ23-EVO-LOCAL-8f3a21
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://evo:evo_dev@evo-db:5432/evolution?schema=public
+      DATABASE_CONNECTION_CLIENT_NAME: evolution
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://evo-redis:6379/6
+      CACHE_REDIS_PREFIX_KEY: evolution
+      CACHE_LOCAL_ENABLED: "false"
+      DEL_INSTANCE: "false"
+      QRCODE_LIMIT: "30"
+    volumes:
+      - evo-instances:/evolution/instances
+    restart: unless-stopped
+
+volumes:
+  evo-db:
+  evo-redis:
+  evo-instances:
