@@ -62,12 +62,14 @@ class DZ23WhatsAppWebhook(http.Controller):
         svc = request.env["dz23.whatsapp"].sudo()
         number, text = svc._parse_evolution_inbound(data)
         if number and text:
+            # Só PERSISTE no inbox durável (dedupe) e confirma rápido; o worker
+            # processa depois. Nunca roda IA/negócio de forma síncrona aqui.
+            mid = svc._extract_message_id("evolution", data)
             try:
-                # sudo() só resolveu/autenticou o canal; o processamento roda
-                # como usuário TÉCNICO sujeito às record rules por empresa.
-                channel._processing_self().handle_inbound(number, text, data)
+                request.env["dz23.message.inbox"].sudo()._enqueue(
+                    channel, mid, number, text, data)
             except Exception:  # noqa: BLE001 - webhook nunca estoura 500
-                _logger.exception("Falha ao processar inbound Evolution canal=%s", channel.id)
+                _logger.exception("Falha ao enfileirar inbound Evolution canal=%s", channel.id)
         return request.make_response("ok")
 
     # ---------------- Meta Cloud (tokenizado, por canal) ----------------
@@ -109,8 +111,10 @@ class DZ23WhatsAppWebhook(http.Controller):
         svc = request.env["dz23.whatsapp"].sudo()
         number, text = svc._parse_meta_inbound(data)
         if number and text:
+            mid = svc._extract_message_id("meta_cloud", data)
             try:
-                channel._processing_self().handle_inbound(number, text, data)
+                request.env["dz23.message.inbox"].sudo()._enqueue(
+                    channel, mid, number, text, data)
             except Exception:  # noqa: BLE001
-                _logger.exception("Falha ao processar inbound Meta canal=%s", channel.id)
+                _logger.exception("Falha ao enfileirar inbound Meta canal=%s", channel.id)
         return request.make_response("ok")

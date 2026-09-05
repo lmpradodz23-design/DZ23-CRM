@@ -41,10 +41,29 @@ class DZ23WhatsApp(models.AbstractModel):
             return None, None
 
     def _on_inbound(self, number, text, raw=None):
-        """Gancho chamado quando chega mensagem. Base: só registra.
-        O módulo dz23_agent sobrescreve para responder com IA e agendar."""
-        _logger.info("WhatsApp inbound de %s: %s", number, (text or "")[:80])
+        """Gancho legado. O processamento real é via dz23.channel.handle_inbound
+        acionado pelo worker do inbox. Mantido por compatibilidade."""
+        _logger.info("WhatsApp inbound (legado) de %s", (number or "")[-4:])
         return False
+
+    @api.model
+    def _extract_message_id(self, provider, data):
+        """ID único da mensagem no provedor (para dedupe do inbox)."""
+        try:
+            if provider == "evolution":
+                mid = ((data.get("data") or {}).get("key") or {}).get("id")
+            else:  # meta_cloud
+                value = data["entry"][0]["changes"][0]["value"]
+                mid = (value.get("messages") or [{}])[0].get("id")
+            if mid:
+                return str(mid)
+        except Exception:  # noqa: BLE001
+            pass
+        # fallback determinístico: hash do envelope (evita perder mensagem sem id)
+        import hashlib
+        import json as _json
+        return "h:" + hashlib.sha256(
+            _json.dumps(data, sort_keys=True, default=str).encode()).hexdigest()[:32]
 
     # ---------- API pública ----------
     @api.model
