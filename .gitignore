@@ -26,3 +26,7 @@ addons_oca/
 # SO
 Thumbs.db
 .DS_Store
+
+# QR temporário de conexão WhatsApp
+addons_custom/_dz23_qr.png
+*_qr.png
