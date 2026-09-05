@@ -7,6 +7,10 @@
             <kanban default_group_by="category" class="o_kanban_dashboard">
                 <field name="status"/>
                 <field name="available"/>
+                <field name="docs_url"/>
+                <field name="name"/>
+                <field name="description"/>
+                <field name="logo"/>
                 <templates>
                     <t t-name="card">
                         <div class="d-flex align-items-start p-2" style="gap:12px;">
