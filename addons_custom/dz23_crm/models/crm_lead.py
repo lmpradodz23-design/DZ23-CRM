@@ -15,6 +15,22 @@ class CrmLead(models.Model):
         "Link WhatsApp", compute="_compute_dz23_whatsapp_link", store=False
     )
 
+    def action_dz23_send_whatsapp(self):
+        """Abre o assistente de envio de WhatsApp já com o telefone do lead."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Enviar WhatsApp",
+            "res_model": "dz23.whatsapp.compose",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_number": self.phone or "",
+                "default_res_model": "crm.lead",
+                "default_res_id": self.id,
+            },
+        }
+
     @api.depends("phone")
     def _compute_dz23_whatsapp_link(self):
         for lead in self:

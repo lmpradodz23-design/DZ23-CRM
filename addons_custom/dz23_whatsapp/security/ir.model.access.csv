@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_dz23_whatsapp_compose,dz23.whatsapp.compose.user,model_dz23_whatsapp_compose,base.group_user,1,1,1,1

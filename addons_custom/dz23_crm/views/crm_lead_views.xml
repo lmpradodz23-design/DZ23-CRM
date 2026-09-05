@@ -10,6 +10,9 @@
                 <field name="dz23_whatsapp_link" widget="url"
                        text="Falar no WhatsApp" readonly="1"
                        invisible="not dz23_whatsapp_link"/>
+                <button name="action_dz23_send_whatsapp" type="object"
+                        string="Enviar WhatsApp" class="btn-link ps-0"
+                        icon="fa-whatsapp"/>
             </xpath>
         </field>
     </record>

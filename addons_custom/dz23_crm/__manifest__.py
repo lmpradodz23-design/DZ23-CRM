@@ -8,7 +8,7 @@
     "website": "https://www.dz23.com.br",
     "license": "LGPL-3",
     "category": "Sales/CRM",
-    "depends": ["crm"],
+    "depends": ["crm", "dz23_whatsapp"],
     "data": [
         "views/crm_lead_views.xml",
     ],

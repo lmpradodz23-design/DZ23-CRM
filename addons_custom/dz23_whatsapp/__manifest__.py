@@ -12,8 +12,10 @@
     "category": "Marketing",
     "depends": ["mail", "phone_validation"],
     "data": [
+        "security/ir.model.access.csv",
         "data/config_params.xml",
         "views/res_config_settings_views.xml",
+        "wizard/whatsapp_compose_views.xml",
     ],
     "installable": True,
     "application": False,
