@@ -177,11 +177,20 @@ class DZ23WhatsApp(models.AbstractModel):
         })
         # salva o nome da instância no config
         self.env["ir.config_parameter"].sudo().set_param("dz23.whatsapp.evolution_instance", instance)
-        # 2) configura o webhook de entrada -> nosso endpoint
+        # 2) configura o webhook de entrada -> nosso endpoint.
+        # Envia a apikey como HEADER no callback: o endpoint é FAIL-CLOSED e
+        # exige esse header (401 sem / 200 com), então o provisionamento precisa
+        # configurá-lo aqui para o callback da Evolution ser aceito.
         webhook_url = "%s/dz23/whatsapp/evolution/webhook" % (
             (self._param("web.base.url") or "http://localhost:8069").rstrip("/"))
         self._evo_request("POST", "/webhook/set/%s" % instance, apikey, json={
-            "webhook": {"enabled": True, "url": webhook_url, "events": ["MESSAGES_UPSERT"]},
+            "webhook": {
+                "enabled": True,
+                "url": webhook_url,
+                "webhookByEvents": False,
+                "events": ["MESSAGES_UPSERT"],
+                "headers": {"apikey": apikey, "Content-Type": "application/json"},
+            },
         })
         # 3) pega o QR para conectar
         data = self._evo_request("GET", "/instance/connect/%s" % instance, apikey)
