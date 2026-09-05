@@ -40,6 +40,23 @@ docker compose restart odoo
 - [ ] Relatório PDF: rodapé com dados do DZ23.
 - [ ] `LICENSE`/`COPYRIGHT` do Odoo intactos (não removidos).
 
+## Apps extras open source (OCA) — equivalentes ao Enterprise
+Os apps que o Odoo mostra com "Upgrade" são do **Enterprise (pagos, código não
+incluído)** — não são desbloqueáveis (seria pirataria). Em vez disso, usamos
+equivalentes **open source da OCA** (grátis, legais):
+
+```bash
+bash scripts/fetch_oca.sh   # baixa os repos OCA (19.0) em addons_oca/
+```
+Já integrados e testados:
+- **Central de Ajuda** → `helpdesk_mgmt` (OCA/helpdesk)
+- **Assinaturas / faturamento recorrente** → `contract` (OCA/contract)
+
+Instale-os junto: acrescente `helpdesk_mgmt,contract` ao `-i` do init. O
+`addons_path` (em `docker/odoo.conf`) já inclui `addons_oca/helpdesk` e
+`addons_oca/contract`. Para mais recursos (assinatura digital, marketing, VoIP),
+adicione o repo OCA correspondente ao `fetch_oca.sh` e ao `addons_path`.
+
 ## Docker travando ("An unexpected error occurred")
 Se o Docker Desktop fechar com erro `starting services: initializing Inference
 manager ... dockerInference: The file cannot be accessed`, é um bug do recurso

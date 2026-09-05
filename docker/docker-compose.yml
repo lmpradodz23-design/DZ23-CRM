@@ -24,6 +24,7 @@ services:
       PASSWORD: ${POSTGRES_PASSWORD:-odoo_dev}
     volumes:
       - ../addons_custom:/mnt/extra-addons
+      - ../addons_oca:/mnt/oca-addons
       - ./odoo.conf:/etc/odoo/odoo.conf
       - dz23-odoo:/var/lib/odoo
     restart: unless-stopped

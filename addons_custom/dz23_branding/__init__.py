@@ -22,3 +22,11 @@ def post_init_hook(env):
         _logger.info("DZ23 branding: idioma padrão definido para %s", lang_code)
     except Exception as e:  # noqa: BLE001 - não pode quebrar a instalação
         _logger.warning("DZ23 branding: falha ao ativar %s: %s", lang_code, e)
+    try:
+        # Renomeia o bot do sistema "OdooBot" -> "DZ23 Bot".
+        root = env.ref("base.partner_root", raise_if_not_found=False)
+        if root and root.name != "DZ23 Bot":
+            root.sudo().write({"name": "DZ23 Bot"})
+            _logger.info("DZ23 branding: bot do sistema renomeado para DZ23 Bot")
+    except Exception as e:  # noqa: BLE001 - não pode quebrar a instalação
+        _logger.warning("DZ23 branding: falha ao ativar %s: %s", lang_code, e)

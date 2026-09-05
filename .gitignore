@@ -20,6 +20,9 @@ docker/filestore/
 # Referência de código do Odoo (não faz parte do produto)
 docs/odoo_ref/
 
+# Módulos OCA (terceiros) — baixados via scripts/fetch_oca.sh, não versionados aqui
+addons_oca/
+
 # SO
 Thumbs.db
 .DS_Store

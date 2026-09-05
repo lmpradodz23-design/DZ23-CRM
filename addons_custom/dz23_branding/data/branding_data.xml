@@ -23,5 +23,10 @@
             <field name="key">web.web_app_name</field>
             <field name="value">DZ23 CRM</field>
         </record>
+
+        <!-- Bot do sistema: "OdooBot" -> "DZ23 Bot" (assina mensagens automáticas) -->
+        <record id="base.partner_root" model="res.partner">
+            <field name="name">DZ23 Bot</field>
+        </record>
     </data>
 </odoo>
