@@ -1,0 +1,11 @@
+# Config de ferramentas de qualidade/segurança do DZ23 CRM.
+# (Não empacota Python — os módulos são addons Odoo. Só centraliza config.)
+
+[tool.bandit]
+# Varre nossos addons; ignora caches e OCA de terceiros.
+exclude_dirs = ["addons_oca", "docs", "**/__pycache__", "**/tests"]
+# B101 (assert) e B311 (random) não se aplicam ao nosso caso de uso.
+skips = ["B101"]
+
+[tool.bandit.assert_used]
+skips = ["*/tests/*"]

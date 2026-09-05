@@ -1,0 +1,22 @@
+# Ruff — linter/format check dos módulos Python do DZ23 CRM.
+# Escopo: nossos addons. O core do Odoo e OCA de terceiros ficam de fora.
+target-version = "py311"
+line-length = 100
+extend-exclude = [
+    "addons_oca",
+    "docs/odoo_ref",
+    "**/__pycache__",
+    "**/migrations",
+]
+
+[lint]
+# Conjuntos pragmáticos: erros/pyflakes/bugbear/imports/comprehensions/upgrade.
+select = ["E", "F", "W", "B", "I", "C4", "UP"]
+ignore = [
+    "E501",  # comprimento de linha tratado pelo line-length + format
+]
+
+[lint.per-file-ignores]
+# __manifest__.py são dicts declarativos; __init__.py só reexportam.
+"**/__manifest__.py" = ["B018", "F401"]
+"**/__init__.py" = ["F401"]

@@ -1,0 +1,96 @@
+# CI open source do DZ23 CRM. Roda em push/PR quando houver remote GitHub.
+# Gates: lint, secret scan, SAST, container/dep scan, SBOM e testes Odoo dos
+# módulos customizados num Postgres efêmero. Falha o build em qualquer gate.
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.6.9"
+      - run: ruff check .
+      - run: ruff format --check .
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+  sast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bandit
+        run: pipx run bandit -c pyproject.toml -r addons_custom
+      - name: Semgrep
+        run: pipx run semgrep scan --config=auto --error addons_custom
+
+  deps-container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy filesystem (vuln + misconfig + secret)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+      - name: SBOM (Syft, SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          artifact-name: dz23-crm-sbom.spdx.json
+
+  odoo-tests:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: odoo
+          POSTGRES_PASSWORD: odoo_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U odoo" --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    container:
+      image: odoo:19
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instala módulos DZ23 + roda testes (tag dz23) em DB efêmero
+        run: |
+          odoo \
+            --db_host db --db_user odoo --db_password odoo_ci \
+            -d ci_dz23 \
+            --addons-path="$GITHUB_WORKSPACE/addons_custom,/usr/lib/python3/dist-packages/odoo/addons" \
+            --without-demo=all \
+            -i dz23_branding,dz23_crm,dz23_ai,dz23_whatsapp,dz23_agent,dz23_payment_woovi,dz23_fiscal,dz23_brasil_tools,dz23_integrations \
+            --test-enable --test-tags dz23 \
+            --stop-after-init --log-level=test
+        # Nota: módulos OCA (helpdesk_mgmt, contract, sign_oca, fieldservice) não
+        # estão no repo (baixados por scripts/fetch_oca.sh). Para testá-los no CI,
+        # adicione um passo de checkout deles pinado por SHA e inclua no addons-path.

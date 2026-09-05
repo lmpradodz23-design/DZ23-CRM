@@ -1,0 +1,22 @@
+# Gitleaks — varredura de segredos do DZ23 CRM.
+# Estende as regras padrão e adiciona allowlist para exemplos/placeholders.
+title = "DZ23 CRM gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Placeholders, exemplos e material de referência — não são segredos."
+paths = [
+    '''\.env\.example$''',
+    '''docs/adr/.*''',
+    '''README\.md$''',
+    '''ARCHITECTURE\.md$''',
+]
+regexes = [
+    # placeholders explícitos usados nos exemplos/config
+    '''troque_[a-z_]+''',
+    '''__OVERRIDDEN_AT_RUNTIME__''',
+    '''CHANGE_ME[A-Z_]*''',
+    '''DZ23-EVO-LOCAL-[0-9a-f]+''',  # chave de DEV local do Evolution (não-produção)
+]
