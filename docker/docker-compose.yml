@@ -29,11 +29,16 @@ services:
       HOST: db
       USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
       PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
-    # admin_passwd (senha mestra) injetada do .env — nunca do placeholder do conf.
+      ODOO_MASTER_PASSWORD: ${ODOO_MASTER_PASSWORD:?defina ODOO_MASTER_PASSWORD no .env}
+    # Gera um conf temporário no container (nunca no host/git) com a senha mestra
+    # e os parâmetros de banco vindos do ambiente, e sobe o Odoo com ele.
     command: >
-      odoo
-      --config=/etc/odoo/odoo.conf
-      --admin-passwd=${ODOO_MASTER_PASSWORD:?defina ODOO_MASTER_PASSWORD no .env}
+      bash -c 'cp /etc/odoo/odoo.conf /tmp/odoo.conf &&
+      { echo "admin_passwd = $$ODOO_MASTER_PASSWORD";
+        echo "db_host = $$HOST";
+        echo "db_user = $$USER";
+        echo "db_password = $$PASSWORD"; } >> /tmp/odoo.conf &&
+      exec odoo -c /tmp/odoo.conf'
     volumes:
       - ../addons_custom:/mnt/extra-addons
       - ../addons_oca:/mnt/oca-addons
