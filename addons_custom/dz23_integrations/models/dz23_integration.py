@@ -49,6 +49,24 @@ class DZ23Integration(models.Model):
             rec.status = "configured" if val else "not_configured"
 
     def action_configure(self):
-        """Abre os Ajustes gerais, onde ficam os campos de API de cada integração."""
+        """Abre os Ajustes já na aba certa da integração (IA/WhatsApp/NF-e) ou,
+        para pagamentos, a lista de provedores de pagamento."""
         self.ensure_one()
-        return self.env.ref("base_setup.action_general_configuration").sudo().read()[0]
+        cp = self.config_param or ""
+        # Pagamento -> lista de provedores de pagamento
+        if self.category == "pagamento":
+            act = self.env.ref("payment.action_payment_provider", raise_if_not_found=False)
+            if act:
+                return act.sudo().read()[0]
+        # Descobrir a aba (app) de Ajustes pela chave/categoria
+        module = False
+        if cp.startswith("dz23.ai") or self.category == "ia":
+            module = "dz23_ai"
+        elif cp.startswith("dz23.whatsapp"):
+            module = "dz23_whatsapp"
+        elif cp.startswith("dz23.nfe") or self.category == "fiscal":
+            module = "dz23_fiscal"
+        action = self.env.ref("base_setup.action_general_configuration").sudo().read()[0]
+        if module:
+            action["context"] = {"module": module}
+        return action

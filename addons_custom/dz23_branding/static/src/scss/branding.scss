@@ -1,27 +1,44 @@
-// DZ23 CRM — ajustes visuais de marca (cores navy + turquesa).
-// Mantido enxuto para não conflitar com o tema do Odoo.
-
+// ============================================================
+// DZ23 CRM — Tema visual (navy + turquesa). Grátis/open source.
+// Aplica a identidade DZ23 no sistema inteiro, de forma consistente.
+// ============================================================
 :root {
     --dz23-navy: #003175;
+    --dz23-navy-dark: #00285f;
     --dz23-teal: #16B1B4;
 }
 
-// Botão primário com o navy da marca (login e backend).
-.btn-primary {
-    --o-btn-primary-bg: var(--dz23-navy);
-    background-color: var(--dz23-navy);
-    border-color: var(--dz23-navy);
-}
-.btn-primary:hover,
-.btn-primary:focus {
-    background-color: #00285f;
-    border-color: #00285f;
+// Cor primária global -> navy DZ23 (botões, ativos, foco, checkboxes)
+.o_web_client,
+:root {
+    --primary: #003175;
+    --o-brand-primary: #003175;
+    --o-brand-secondary: #16B1B4;
+    --link-color: #0d7d80;
 }
 
-// Barra superior do backend com o navy DZ23 (cara do DZ23 no sistema todo)
+// Botões primários
+.btn-primary {
+    --o-btn-primary-bg: var(--dz23-navy);
+    background-color: var(--dz23-navy) !important;
+    border-color: var(--dz23-navy) !important;
+}
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: var(--dz23-navy-dark) !important;
+    border-color: var(--dz23-navy-dark) !important;
+}
+.btn-link,
+.o_form_uri,
+a.o_field_widget {
+    color: #0d7d80;
+}
+
+// Barra superior do backend em navy DZ23 + borda turquesa
 .o_main_navbar {
     background-color: var(--dz23-navy) !important;
-    border-bottom: 2px solid var(--dz23-teal) !important;
+    border-bottom: 3px solid var(--dz23-teal) !important;
 }
 .o_main_navbar,
 .o_main_navbar > a,
@@ -38,6 +55,31 @@
 .o_main_navbar .show > .dropdown-toggle {
     background-color: rgba(255, 255, 255, 0.12) !important;
 }
-// Realce do app ativo em turquesa
-.o_main_navbar .o_menu_brand { font-weight: 600; }
 
+// Toque moderno: cantos arredondados + sombra suave
+.o_form_sheet,
+.o_setting_box,
+.o_kanban_record,
+.o_kanban_record .oe_kanban_card,
+.o_field_widget.o_field_image img {
+    border-radius: 12px !important;
+}
+.o_kanban_view .o_kanban_record {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.15s ease;
+}
+.o_kanban_view .o_kanban_record:hover {
+    box-shadow: 0 4px 14px rgba(0, 49, 117, 0.14);
+}
+
+// Realce turquesa em abas/menus ativos
+.o_notebook .nav-link.active,
+.o_cp_switch_buttons .btn.active {
+    border-color: var(--dz23-teal) !important;
+    color: var(--dz23-navy) !important;
+}
+
+// Cabeçalho das telas de Ajustes (settings) na cor da marca
+.o_setting_search .o_searchview_input:focus {
+    border-color: var(--dz23-teal);
+}
