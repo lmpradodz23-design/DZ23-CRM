@@ -27,6 +27,14 @@ class ResConfigSettings(models.TransientModel):
     dz23_wa_meta_version = fields.Char(
         "Meta API version", default="v20.0", config_parameter="dz23.whatsapp.meta_api_version"
     )
+    dz23_wa_meta_app_secret = fields.Char(
+        "Meta App Secret (validação do webhook)",
+        config_parameter="dz23.whatsapp.meta_app_secret",
+    )
+    dz23_wa_webhook_verify_token = fields.Char(
+        "Webhook verify token",
+        config_parameter="dz23.whatsapp.webhook_verify_token",
+    )
 
     # Twilio
     dz23_wa_twilio_sid = fields.Char(

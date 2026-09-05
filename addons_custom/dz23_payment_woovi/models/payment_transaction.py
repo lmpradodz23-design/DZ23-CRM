@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 from odoo import _, api, models
 from odoo.exceptions import ValidationError
+from odoo.tools import float_round
+
+
+def _to_cents(amount):
+    return int(float_round(amount * 100, precision_digits=0))
 
 
 class PaymentTransaction(models.Model):
@@ -13,7 +18,7 @@ class PaymentTransaction(models.Model):
 
         payload = {
             "correlationID": self.reference,
-            "value": int(round(self.amount * 100)),  # Woovi usa centavos (int)
+            "value": _to_cents(self.amount),  # Woovi usa centavos (int)
             "comment": self.reference,
         }
         try:
@@ -45,7 +50,16 @@ class PaymentTransaction(models.Model):
         if status in ("ACTIVE", "PENDING"):
             self._set_pending()
         elif status in ("COMPLETED", "PAID", "CONFIRMED"):
-            self._set_done()
+            # Defesa extra: confere o valor pago contra o esperado (em centavos).
+            paid = charge.get("value")
+            expected = _to_cents(self.amount)
+            if paid is not None and int(paid) != expected:
+                self._set_error(
+                    _("Valor divergente na confirmação Woovi (esperado %s, recebido %s).")
+                    % (expected, paid)
+                )
+            else:
+                self._set_done()
         elif status in ("EXPIRED",):
             self._set_canceled()
         else:
