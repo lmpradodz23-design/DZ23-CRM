@@ -39,6 +39,25 @@ class DZ23WhatsApp(models.AbstractModel):
     def _provider(self):
         return (self._param("dz23.whatsapp_provider", "meta_cloud") or "meta_cloud").strip()
 
+    # ---------- Entrada (inbound) ----------
+    @api.model
+    def _parse_meta_inbound(self, data):
+        """Extrai (número, texto) de um payload de webhook da Meta Cloud API."""
+        try:
+            value = data["entry"][0]["changes"][0]["value"]
+            msg = (value.get("messages") or [{}])[0]
+            number = msg.get("from")
+            text = (msg.get("text") or {}).get("body")
+            return number, text
+        except Exception:  # noqa: BLE001
+            return None, None
+
+    def _on_inbound(self, number, text, raw=None):
+        """Gancho chamado quando chega mensagem. Base: só registra.
+        O módulo dz23_agent sobrescreve para responder com IA e agendar."""
+        _logger.info("WhatsApp inbound de %s: %s", number, (text or "")[:80])
+        return False
+
     # ---------- API pública ----------
     @api.model
     def send_text(self, number, body):
@@ -110,10 +129,79 @@ class DZ23WhatsApp(models.AbstractModel):
     def _send_evolution(self, to, body):
         # Evolution API (não-oficial). base_url + instance + apikey do config.
         base = (self._param("dz23.whatsapp.evolution_base") or "").rstrip("/")
-        instance = self._param("dz23.whatsapp.evolution_instance")
+        instance = self._param("dz23.whatsapp.evolution_instance") or self._evo_instance_name()
         apikey = self._param("dz23.whatsapp.evolution_apikey")
         if not base or not instance or not apikey:
             raise UserError(_("Configure base, instância e apikey da Evolution em Ajustes."))
         url = "%s/message/sendText/%s" % (base, instance)
         payload = {"number": to, "text": body}
         return self._post(url, headers={"apikey": apikey}, json=payload)
+
+    # ---------- Evolution: provisionamento (criar instância + QR) ----------
+    def _evo_instance_name(self):
+        return self._param("dz23.whatsapp.evolution_instance") or ("dz23_%s" % self.env.cr.dbname)
+
+    def _evo_base_apikey(self):
+        base = (self._param("dz23.whatsapp.evolution_base") or "").rstrip("/")
+        apikey = self._param("dz23.whatsapp.evolution_apikey")
+        if not base or not apikey:
+            raise UserError(_("Configure a base URL e a apikey da Evolution em Ajustes."))
+        return base, apikey
+
+    def _evo_request(self, method, path, apikey, **kwargs):
+        base, _ak = self._evo_base_apikey() if not apikey else (self._param("dz23.whatsapp.evolution_base").rstrip("/"), apikey)
+        url = "%s%s" % (base, path)
+        try:
+            resp = requests.request(method, url, timeout=_TIMEOUT,
+                                    headers={"apikey": apikey, "Content-Type": "application/json"},
+                                    **kwargs)
+        except requests.exceptions.RequestException as e:
+            raise UserError(_("Não foi possível falar com o servidor Evolution: %s") % e)
+        if resp.status_code >= 400 and resp.status_code != 403:
+            _logger.info("Evolution %s %s -> %s: %s", method, url, resp.status_code, resp.text[:300])
+        try:
+            return resp.json()
+        except ValueError:
+            return {"raw": resp.text}
+
+    @api.model
+    def evolution_connect(self):
+        """Cria a instância (se não existir), configura o webhook e retorna o QR (base64)."""
+        base, apikey = self._evo_base_apikey()
+        instance = self._evo_instance_name()
+        # 1) cria a instância (idempotente: se já existe, a API retorna erro tratável)
+        self._evo_request("POST", "/instance/create", apikey, json={
+            "instanceName": instance,
+            "integration": "WHATSAPP-BAILEYS",
+            "qrcode": True,
+        })
+        # salva o nome da instância no config
+        self.env["ir.config_parameter"].sudo().set_param("dz23.whatsapp.evolution_instance", instance)
+        # 2) configura o webhook de entrada -> nosso endpoint
+        webhook_url = "%s/dz23/whatsapp/evolution/webhook" % (
+            (self._param("web.base.url") or "http://localhost:8069").rstrip("/"))
+        self._evo_request("POST", "/webhook/set/%s" % instance, apikey, json={
+            "webhook": {"enabled": True, "url": webhook_url, "events": ["MESSAGES_UPSERT"]},
+        })
+        # 3) pega o QR para conectar
+        data = self._evo_request("GET", "/instance/connect/%s" % instance, apikey)
+        qr = data.get("base64") or (data.get("qrcode") or {}).get("base64") or ""
+        return {"instance": instance, "qr": qr, "webhook": webhook_url}
+
+    # ---------- Evolution: leitura de mensagem recebida ----------
+    @api.model
+    def _parse_evolution_inbound(self, data):
+        """Extrai (número, texto) de um evento MESSAGES_UPSERT da Evolution."""
+        try:
+            d = data.get("data") or {}
+            key = d.get("key") or {}
+            if key.get("fromMe"):
+                return None, None  # ignora o que nós mesmos enviamos
+            jid = key.get("remoteJid") or ""
+            number = jid.split("@")[0]
+            msg = d.get("message") or {}
+            text = (msg.get("conversation")
+                    or (msg.get("extendedTextMessage") or {}).get("text"))
+            return number, text
+        except Exception:  # noqa: BLE001
+            return None, None

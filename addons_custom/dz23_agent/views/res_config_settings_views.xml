@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="dz23_agent_res_config_settings_view" model="ir.ui.view">
+        <field name="name">dz23.agent.res.config.settings</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app string="DZ23 Agente IA" name="dz23_agent">
+                    <block title="Atendente automático de WhatsApp"
+                           help="Responde as mensagens recebidas com IA e agenda automaticamente na Agenda. Requer WhatsApp conectado e provedor de IA.">
+                        <setting string="Auto-resposta por IA" help="Ligar/desligar o atendente automático.">
+                            <field name="dz23_agent_autoreply"/>
+                        </setting>
+                        <setting string="Instruções do atendente">
+                            <field name="dz23_agent_prompt" placeholder="Ex.: Você é o atendente do DZ23, cordial e objetivo..."/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+</odoo>

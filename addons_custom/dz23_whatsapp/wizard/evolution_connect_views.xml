@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="dz23_whatsapp_evolution_form" model="ir.ui.view">
+        <field name="name">dz23.whatsapp.evolution.form</field>
+        <field name="model">dz23.whatsapp.evolution</field>
+        <field name="arch" type="xml">
+            <form string="Conectar WhatsApp (Evolution)">
+                <div class="text-center">
+                    <h3>Conectar WhatsApp</h3>
+                    <field name="info" nolabel="1" class="text-muted"/>
+                    <field name="qr_image" widget="image" nolabel="1"
+                           options="{'size': [280, 280]}"/>
+                    <group>
+                        <field name="instance" readonly="1"/>
+                        <field name="webhook" readonly="1"/>
+                    </group>
+                </div>
+                <footer>
+                    <button name="action_refresh" type="object" string="Atualizar QR" class="btn-primary"/>
+                    <button string="Fechar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

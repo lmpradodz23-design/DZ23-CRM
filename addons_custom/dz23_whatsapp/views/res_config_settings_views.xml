@@ -33,8 +33,11 @@
                                  help="Grátis, mas risco de banimento do número — evite como base de SaaS revendido.">
                             <div class="content-group">
                                 <field name="dz23_wa_evo_base" placeholder="https://evo.seu-dominio.com"/>
-                                <field name="dz23_wa_evo_instance" placeholder="nome-da-instancia"/>
+                                <field name="dz23_wa_evo_instance" placeholder="nome-da-instancia (auto)"/>
                                 <field name="dz23_wa_evo_apikey" password="True" placeholder="apikey"/>
+                                <button name="action_dz23_evolution_connect" type="object"
+                                        string="Conectar WhatsApp (gerar QR Code)"
+                                        class="btn-primary mt-2" icon="fa-qrcode"/>
                             </div>
                         </setting>
                     </block>

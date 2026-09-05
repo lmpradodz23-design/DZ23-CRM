@@ -50,14 +50,37 @@ class DZ23WhatsAppWebhook(http.Controller):
             return request.make_response("unauthorized", status=401)
 
         data = request.get_json_data() or {}
-        # Log apenas de metadados (sem número/conteúdo — LGPD).
+        svc = request.env["dz23.whatsapp"].sudo()
+        number, text = svc._parse_meta_inbound(data)
+        if number and text:
+            try:
+                svc._on_inbound(number, text, data)
+            except Exception:  # noqa: BLE001 - webhook nunca deve estourar 500
+                _logger.exception("Falha ao processar inbound do WhatsApp")
+        else:
+            _logger.info("WhatsApp inbound sem texto (evento ignorado).")
+        return request.make_response("ok")
+
+    @http.route("/dz23/whatsapp/evolution/webhook", type="http", auth="public",
+                methods=["POST"], csrf=False)
+    def evolution_webhook(self, **_kwargs):
+        """Recebe eventos da Evolution API (MESSAGES_UPSERT) e aciona o agente."""
+        raw = request.httprequest.get_data() or b""
+        # Valida a apikey (Evolution envia no header 'apikey') se estiver configurada.
+        cfg_key = request.env["ir.config_parameter"].sudo().get_param("dz23.whatsapp.evolution_apikey", "")
+        req_key = request.httprequest.headers.get("apikey", "")
+        if cfg_key and req_key and req_key != cfg_key:
+            return request.make_response("unauthorized", status=401)
+        import json
         try:
-            entry = (data.get("entry") or [{}])[0]
-            change = (entry.get("changes") or [{}])[0]
-            field = change.get("field")
-            _logger.info("WhatsApp inbound verificado: field=%s", field)
-        except Exception:  # noqa: BLE001
-            _logger.info("WhatsApp inbound verificado.")
-        # TODO(go-live): vincular a res.partner/crm.lead pelo telefone e criar
-        # mensagem no chatter. Só após teste com número real.
+            data = json.loads(raw or b"{}")
+        except ValueError:
+            data = {}
+        svc = request.env["dz23.whatsapp"].sudo()
+        number, text = svc._parse_evolution_inbound(data)
+        if number and text:
+            try:
+                svc._on_inbound(number, text, data)
+            except Exception:  # noqa: BLE001
+                _logger.exception("Falha ao processar inbound Evolution")
         return request.make_response("ok")

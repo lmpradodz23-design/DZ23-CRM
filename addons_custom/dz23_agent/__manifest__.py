@@ -1,0 +1,20 @@
+# -*- coding: utf-8 -*-
+# DZ23 CRM — Agente WhatsApp com IA: responde mensagens recebidas e agenda.
+# Recebe (Meta ou Evolution) -> IA responde -> envia de volta; se detectar
+# intenção de horário, cria evento na Agenda e confirma. Provedor-agnóstico.
+{
+    "name": "DZ23 CRM — Agente IA (WhatsApp + Agenda)",
+    "version": "19.0.1.0.0",
+    "summary": "Auto-resposta de WhatsApp por IA + agendamento automático na Agenda.",
+    "author": "DZ23 (LEANDRO MARCOS PRADO LTDA)",
+    "website": "https://www.dz23.com.br",
+    "license": "LGPL-3",
+    "category": "Marketing",
+    "depends": ["dz23_whatsapp", "dz23_ai", "crm", "calendar", "phone_validation"],
+    "data": [
+        "data/config_params.xml",
+        "views/res_config_settings_views.xml",
+    ],
+    "installable": True,
+    "application": False,
+}

@@ -57,3 +57,17 @@ class ResConfigSettings(models.TransientModel):
     dz23_wa_evo_apikey = fields.Char(
         "Evolution apikey", config_parameter="dz23.whatsapp.evolution_apikey"
     )
+
+    def action_dz23_evolution_connect(self):
+        """Cria a instância Evolution e abre o assistente com o QR Code."""
+        self.ensure_one()
+        wiz = self.env["dz23.whatsapp.evolution"].create({})
+        wiz._load_qr()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Conectar WhatsApp (Evolution)",
+            "res_model": "dz23.whatsapp.evolution",
+            "res_id": wiz.id,
+            "view_mode": "form",
+            "target": "new",
+        }

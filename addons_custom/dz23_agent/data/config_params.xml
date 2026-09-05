@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="dz23_agent_autoreply_default" model="ir.config_parameter">
+            <field name="key">dz23.agent.autoreply</field>
+            <field name="value">1</field>
+        </record>
+    </data>
+</odoo>
