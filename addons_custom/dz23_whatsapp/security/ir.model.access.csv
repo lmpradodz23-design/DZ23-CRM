@@ -1,3 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_dz23_whatsapp_compose,dz23.whatsapp.compose.user,model_dz23_whatsapp_compose,base.group_user,1,1,1,1
 access_dz23_whatsapp_evolution,dz23.whatsapp.evolution.user,model_dz23_whatsapp_evolution,base.group_system,1,1,1,1
+access_dz23_channel_user,dz23.channel.user,model_dz23_channel,base.group_user,1,0,0,0
+access_dz23_channel_manager,dz23.channel.manager,model_dz23_channel,base.group_system,1,1,1,1

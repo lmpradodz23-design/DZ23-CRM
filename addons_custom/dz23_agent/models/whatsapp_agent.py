@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
-# Cérebro do atendente/vendedor: recebe WhatsApp -> entende a intenção ->
-#   agenda (cria evento na Agenda, que sincroniza com o Google Calendar),
-#   vende (abre orçamento/pedido com base no catálogo do negócio),
-#   ou responde com IA usando o contexto REAL da empresa (qualquer ramo).
-# Estende o serviço dz23.whatsapp (funciona tanto p/ Meta quanto Evolution).
+# Cérebro do atendente/vendedor, agora POR CANAL e no ESCOPO da empresa do canal
+# (multi-tenant). Estende dz23.channel e sobrescreve handle_inbound:
+#   - agenda (cria evento -> Google Calendar),
+#   - vende (abre orçamento na empresa do canal),
+#   - ou responde com IA usando o catálogo/persona daquela empresa.
+# A busca de lead é ESCOPADA por empresa (nunca global por cauda de telefone).
 import logging
 import re
 from datetime import timedelta
 
 from odoo import fields, models
 from odoo.tools.translate import _
+
+from odoo.addons.dz23_whatsapp.models.whatsapp_channel import _digits, _e164_br
 
 _logger = logging.getLogger(__name__)
 
@@ -33,58 +36,55 @@ _BUY_RE = re.compile(
     r"quero\s+(?:o|a|um|uma|comprar)|me\s+v[eê]nd", re.IGNORECASE)
 
 
-def _digits(v):
-    return re.sub(r"\D", "", v or "")
-
-
 def _strip_html(v):
     return re.sub(r"<[^>]+>", " ", v or "").strip()
 
 
-class DZ23WhatsAppAgent(models.AbstractModel):
-    _inherit = "dz23.whatsapp"
+class DZ23ChannelAgent(models.Model):
+    _inherit = "dz23.channel"
 
-    # ---- flags / util -----------------------------------------------------
-    def _agent_enabled(self):
-        return (self._param("dz23.agent.autoreply", "1") or "1") not in ("0", "False", "false")
-
+    # ---- lead escopado por empresa (nunca busca global) -------------------
     def _agent_find_lead(self, number):
-        """Acha ou cria um lead do CRM pelo telefone (liga WhatsApp -> CRM)."""
-        digits = _digits(number)
-        tail = digits[-8:] if len(digits) >= 8 else digits
+        self.ensure_one()
+        e164 = _e164_br(number)
+        tail = e164[-11:] if len(e164) >= 11 else e164
+        company = self.company_id
         Lead = self.env["crm.lead"]
-        lead = Lead.search([("phone", "ilike", tail)], limit=1) if tail else Lead
+        dom = [("company_id", "in", (False, company.id))]
+        lead = Lead.search(dom + [("phone", "ilike", tail)], limit=1) if tail else Lead.browse()
         if lead:
             return lead
         Partner = self.env["res.partner"]
-        partner = Partner.search([("phone", "ilike", tail)], limit=1) if tail else Partner
+        partner = Partner.search(
+            [("company_id", "in", (False, company.id)), ("phone", "ilike", tail)], limit=1
+        ) if tail else Partner.browse()
         return Lead.create({
             "name": _("WhatsApp %s") % number,
-            "phone": number,
+            "phone": e164 or number,
             "type": "lead",
+            "company_id": company.id,
             "partner_id": partner.id if partner else False,
         })
 
     def _agent_partner_for(self, lead):
-        """Garante um contato (res.partner) para o lead — necessário p/ orçamento."""
         if lead.partner_id:
             return lead.partner_id
         partner = self.env["res.partner"].create({
             "name": lead.contact_name or lead.name or _("Cliente WhatsApp"),
             "phone": lead.phone or "",
+            "company_id": self.company_id.id,
         })
         lead.partner_id = partner.id
         return partner
 
-    # ---- contexto do negócio (torna o robô genérico p/ qualquer ramo) -----
+    # ---- contexto do negócio (escopado por empresa) -----------------------
     def _agent_catalog(self, limit=40):
-        """Lista produtos/serviços vendáveis do negócio (recordset)."""
         return self.env["product.template"].search(
-            [("sale_ok", "=", True)], order="list_price desc", limit=limit)
+            [("sale_ok", "=", True), ("company_id", "in", (False, self.company_id.id))],
+            order="list_price desc", limit=limit)
 
     def _agent_business_context(self):
-        """Texto com empresa + catálogo, injetado na IA para ela vender em qualquer ramo."""
-        company = self.env.company
+        company = self.company_id
         parts = [_("Empresa: %s.") % (company.name or "DZ23 CRM")]
         currency = company.currency_id.symbol or "R$"
         prods = self._agent_catalog()
@@ -93,33 +93,27 @@ class DZ23WhatsAppAgent(models.AbstractModel):
             parts.append(_("Catálogo de produtos/serviços à venda:\n%s") % "\n".join(cat))
         else:
             parts.append(_(
-                "Ainda não há produtos cadastrados no sistema; faça o atendimento, "
-                "entenda a necessidade do cliente e colete os dados do interesse."))
+                "Ainda não há produtos cadastrados; faça o atendimento, entenda a "
+                "necessidade do cliente e colete os dados do interesse."))
         return "\n".join(parts)
 
     def _agent_history(self, lead, limit=6):
-        """Últimas mensagens do chatter do lead — dá memória de conversa ao robô."""
         msgs = self.env["mail.message"].search(
             [("model", "=", lead._name), ("res_id", "=", lead.id)],
             order="id desc", limit=limit)
-        hist = []
-        for msg in reversed(msgs):
-            body = _strip_html(msg.body)
-            if body:
-                hist.append(body)
+        hist = [b for b in (_strip_html(m.body) for m in reversed(msgs)) if b]
         return "\n".join(hist[-limit:])
 
     def _agent_system_prompt(self, lead):
-        base = self._param("dz23.agent.prompt") or _DEFAULT_PROMPT
-        history = self._agent_history(lead)
+        base = self.agent_prompt or _DEFAULT_PROMPT
         blocks = [base, self._agent_business_context()]
+        history = self._agent_history(lead)
         if history:
             blocks.append(_("Histórico recente da conversa:\n%s") % history)
         return "\n\n".join(blocks)
 
     # ---- detecção de intenção --------------------------------------------
     def _agent_parse_datetime(self, text):
-        """Extrai data/hora de textos tipo '10/09 às 14:30'. Retorna datetime ou False."""
         m = re.search(r"(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?(?:\D{0,8}(\d{1,2})(?::(\d{2}))?)?", text or "")
         if not m:
             return False
@@ -137,7 +131,6 @@ class DZ23WhatsAppAgent(models.AbstractModel):
             return False
 
     def _agent_match_product(self, text):
-        """Casa o texto do cliente com um produto/serviço do catálogo (ou False)."""
         t = (text or "").lower()
         for p in self._agent_catalog():
             name = (p.name or "").lower().strip()
@@ -145,7 +138,7 @@ class DZ23WhatsAppAgent(models.AbstractModel):
                 return p
         return False
 
-    # ---- ações ------------------------------------------------------------
+    # ---- ações (na empresa do canal) -------------------------------------
     def _agent_create_event(self, lead, when):
         self.env["calendar.event"].create({
             "name": _("Agendamento WhatsApp — %s") % (lead.contact_name or lead.name),
@@ -158,23 +151,19 @@ class DZ23WhatsAppAgent(models.AbstractModel):
                           % when.strftime("%d/%m/%Y %H:%M"))
 
     def _agent_create_quote(self, lead, product):
-        """Abre um orçamento (sale.order em rascunho) — venda real, reversível, sem cobrar."""
         if "sale.order" not in self.env:
             return False
         partner = self._agent_partner_for(lead)
-        variant = product.product_variant_id
         so = self.env["sale.order"].create({
             "partner_id": partner.id,
+            "company_id": self.company_id.id,
             "origin": "WhatsApp DZ23",
-            "order_line": [(0, 0, {
-                "product_id": variant.id,
-                "product_uom_qty": 1.0,
-            })],
+            "order_line": [(0, 0, {"product_id": product.product_variant_id.id,
+                                   "product_uom_qty": 1.0})],
         })
         lead.message_post(body=_("🛒 Orçamento %s aberto: %s") % (so.name, product.name))
         return so
 
-    # ---- pipeline principal ----------------------------------------------
     def _agent_reply_ai(self, lead, text, fallback):
         try:
             return self.env["dz23.ai"].chat(text, system=self._agent_system_prompt(lead))
@@ -182,34 +171,33 @@ class DZ23WhatsAppAgent(models.AbstractModel):
             _logger.info("Agente: IA indisponível (%s), usando resposta padrão.", type(e).__name__)
             return fallback
 
-    def _on_inbound(self, number, text, raw=None):
-        if not self._agent_enabled():
-            return super()._on_inbound(number, text, raw)
+    # ---- pipeline principal (sobrescreve o gancho do canal) ---------------
+    def handle_inbound(self, number, text, raw=None):
+        self.ensure_one()
+        if not self.agent_autoreply:
+            return super().handle_inbound(number, text, raw)
 
         lead = self._agent_find_lead(number)
         lead.message_post(body=_("📩 WhatsApp recebido de %s: %s") % (number, text))
 
-        # 1) Agendamento em tempo real (cria evento -> Google Calendar).
         when = self._agent_parse_datetime(text) if _SCHED_RE.search(text or "") else False
         if when:
             self._agent_create_event(lead, when)
             reply = _("Perfeito! Agendei para %s. Se precisar remarcar, é só falar. 💙 DZ23") % (
                 when.strftime("%d/%m/%Y às %H:%M"))
         else:
-            # 2) Venda: intenção de compra + produto do catálogo -> abre orçamento.
             product = self._agent_match_product(text) if _BUY_RE.search(text or "") else False
             quote = self._agent_create_quote(lead, product) if product else False
             if quote:
                 fallback = _(
                     "Boa escolha! Anotei seu pedido de %s (%s %.2f). "
                     "Posso confirmar para você fechar? 💙 DZ23") % (
-                    product.name, self.env.company.currency_id.symbol or "R$",
+                    product.name, self.company_id.currency_id.symbol or "R$",
                     product.list_price or 0.0)
             else:
                 fallback = _(
                     "Oi! Já vi sua mensagem por aqui 😊 Me conta rapidinho o que você "
                     "precisa que eu te ajudo agora mesmo.")
-            # 3) IA responde com o contexto do negócio (vende/atende qualquer ramo).
             reply = self._agent_reply_ai(lead, text, fallback)
 
         try:

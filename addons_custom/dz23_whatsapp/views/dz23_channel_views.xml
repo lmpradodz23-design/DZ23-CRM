@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="dz23_channel_view_form" model="ir.ui.view">
+        <field name="name">dz23.channel.form</field>
+        <field name="model">dz23.channel</field>
+        <field name="arch" type="xml">
+            <form string="Canal de WhatsApp">
+                <header>
+                    <button name="action_evolution_connect" type="object"
+                            string="Conectar WhatsApp (QR)" class="btn-primary"
+                            icon="fa-qrcode" invisible="provider != 'evolution'"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="provider"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="agent_autoreply"/>
+                            <field name="webhook_token" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Evolution" invisible="provider != 'evolution'">
+                            <group>
+                                <field name="evo_base" placeholder="http://dz23evo-evolution-api-1:8080"/>
+                                <field name="evo_instance" placeholder="nome-da-instancia"/>
+                                <field name="evo_apikey" password="True"/>
+                            </group>
+                        </page>
+                        <page string="Meta Cloud" invisible="provider != 'meta_cloud'">
+                            <group>
+                                <field name="meta_phone_id"/>
+                                <field name="meta_token" password="True"/>
+                                <field name="meta_api_version"/>
+                                <field name="meta_app_secret" password="True"/>
+                                <field name="meta_verify_token"/>
+                            </group>
+                        </page>
+                        <page string="Twilio" invisible="provider != 'twilio'">
+                            <group>
+                                <field name="twilio_sid"/>
+                                <field name="twilio_token" password="True"/>
+                                <field name="twilio_from" placeholder="+14155238886"/>
+                            </group>
+                        </page>
+                        <page string="Agente">
+                            <field name="agent_prompt" placeholder="Personalidade/instruções do atendente virtual deste canal…"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="dz23_channel_view_list" model="ir.ui.view">
+        <field name="name">dz23.channel.list</field>
+        <field name="model">dz23.channel</field>
+        <field name="arch" type="xml">
+            <list string="Canais">
+                <field name="name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="provider"/>
+                <field name="evo_instance"/>
+                <field name="agent_autoreply"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="dz23_channel_action" model="ir.actions.act_window">
+        <field name="name">Canais de WhatsApp</field>
+        <field name="res_model">dz23.channel</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="dz23_channel_menu_root" name="DZ23 WhatsApp" sequence="90"/>
+    <menuitem id="dz23_channel_menu" name="Canais" parent="dz23_channel_menu_root"
+              action="dz23_channel_action" sequence="10"
+              groups="base.group_system"/>
+</odoo>
