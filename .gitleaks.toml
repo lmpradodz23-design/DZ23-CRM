@@ -14,9 +14,8 @@ paths = [
     '''ARCHITECTURE\.md$''',
 ]
 regexes = [
-    # placeholders explícitos usados nos exemplos/config
+    # SOMENTE placeholders explícitos (nunca valores reais de segredo).
     '''troque_[a-z_]+''',
     '''__OVERRIDDEN_AT_RUNTIME__''',
     '''CHANGE_ME[A-Z_]*''',
-    '''DZ23-EVO-LOCAL-[0-9a-f]+''',  # chave de DEV local do Evolution (não-produção)
 ]

@@ -52,6 +52,11 @@ class DZ23Channel(models.Model):
     webhook_token = fields.Char(
         required=True, copy=False, index=True, readonly=True,
         default=lambda self: secrets.token_urlsafe(24))
+    # Segredo INDEPENDENTE da chave administrativa do provedor, usado só para
+    # autenticar o callback (header X-DZ23-Callback). Rotacionável por canal.
+    callback_secret = fields.Char(
+        required=True, copy=False, readonly=True,
+        default=lambda self: secrets.token_urlsafe(32))
 
     # Evolution
     evo_base = fields.Char("Evolution base URL")
@@ -181,8 +186,11 @@ class DZ23Channel(models.Model):
             return {"raw": resp.text}
 
     def _webhook_url(self, kind):
-        base = (self.env["ir.config_parameter"].sudo().get_param("web.base.url")
-                or "http://localhost:8069").rstrip("/")
+        # Base ALCANÇÁVEL pelo provedor (rede interna de containers), distinta da
+        # web.base.url pública. Configurável em dz23.whatsapp.webhook_base.
+        ICP = self.env["ir.config_parameter"].sudo()
+        base = (ICP.get_param("dz23.whatsapp.webhook_base")
+                or ICP.get_param("web.base.url") or "http://localhost:8069").rstrip("/")
         return "%s/dz23/whatsapp/%s/webhook/%s" % (base, kind, self.webhook_token)
 
     def action_evolution_connect(self):
@@ -192,15 +200,33 @@ class DZ23Channel(models.Model):
             self.evo_instance = "dz23_%s_%s" % (self.company_id.id, self.id)
         self._evo_req("POST", "/instance/create", json={
             "instanceName": self.evo_instance, "integration": "WHATSAPP-BAILEYS", "qrcode": True})
-        # webhook tokenizado + apikey no header (endpoint é fail-closed)
+        # webhook tokenizado + SEGREDO DE CALLBACK próprio no header (independente
+        # da chave administrativa). O endpoint é fail-closed e valida esse header.
         self._evo_req("POST", "/webhook/set/%s" % self.evo_instance, json={
             "webhook": {
                 "enabled": True,
                 "url": self._webhook_url("evolution"),
                 "webhookByEvents": False,
                 "events": ["MESSAGES_UPSERT"],
-                "headers": {"apikey": self.evo_apikey, "Content-Type": "application/json"},
+                "headers": {"X-DZ23-Callback": self.callback_secret,
+                            "Content-Type": "application/json"},
             }})
         data = self._evo_req("GET", "/instance/connect/%s" % self.evo_instance)
         qr = data.get("base64") or (data.get("qrcode") or {}).get("base64") or ""
         return {"instance": self.evo_instance, "qr": qr, "webhook": self._webhook_url("evolution")}
+
+    def action_rotate_callback_secret(self):
+        """Gera um novo segredo de callback e reconfigura o webhook do provedor."""
+        self.ensure_one()
+        self.callback_secret = secrets.token_urlsafe(32)
+        if self.provider == "evolution" and self.evo_instance:
+            self._evo_req("POST", "/webhook/set/%s" % self.evo_instance, json={
+                "webhook": {
+                    "enabled": True,
+                    "url": self._webhook_url("evolution"),
+                    "webhookByEvents": False,
+                    "events": ["MESSAGES_UPSERT"],
+                    "headers": {"X-DZ23-Callback": self.callback_secret,
+                                "Content-Type": "application/json"},
+                }})
+        return True

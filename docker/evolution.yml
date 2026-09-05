@@ -27,8 +27,9 @@ services:
     depends_on:
       - evo-db
       - evo-redis
-    ports:
-      - "127.0.0.1:8080:8080"
+    # SEM publicação de porta no host: acessível só pela rede interna do compose
+    # e pela rede compartilhada dz23net (Odoo fala por nome de container).
+    # Isso elimina exposição pública e o conflito de bind no host.
     environment:
       AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:?defina EVOLUTION_API_KEY no .env}
       DATABASE_ENABLED: "true"

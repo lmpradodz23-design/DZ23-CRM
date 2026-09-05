@@ -20,6 +20,7 @@ class TestEvolutionWebhookAuth(HttpCase):
             "evo_instance": "inst_teste",
             "evo_apikey": "TESTKEY-123",
         })
+        self.secret = self.channel.callback_secret
         self.url = "/dz23/whatsapp/evolution/webhook/%s" % self.channel.webhook_token
         self.body = json.dumps({"instance": "inst_teste", "data": {}}).encode()
 
@@ -35,34 +36,45 @@ class TestEvolutionWebhookAuth(HttpCase):
         r = self._post({"Content-Type": "application/json"})
         self.assertEqual(r.status_code, 401)
 
-    def test_wrong_key_401(self):
-        r = self._post({"Content-Type": "application/json", "apikey": "WRONG"})
+    def test_wrong_secret_401(self):
+        r = self._post({"Content-Type": "application/json", "X-DZ23-Callback": "WRONG"})
         self.assertEqual(r.status_code, 401)
 
-    def test_correct_key_200(self):
-        r = self._post({"Content-Type": "application/json", "apikey": "TESTKEY-123"})
+    def test_admin_key_is_not_callback_secret_401(self):
+        # a chave administrativa NÃO serve como segredo de callback
+        r = self._post({"Content-Type": "application/json", "X-DZ23-Callback": "TESTKEY-123"})
+        self.assertEqual(r.status_code, 401)
+
+    def test_correct_secret_200(self):
+        r = self._post({"Content-Type": "application/json", "X-DZ23-Callback": self.secret})
         self.assertEqual(r.status_code, 200)
 
     def test_invalid_json_400(self):
-        r = self._post({"Content-Type": "application/json", "apikey": "TESTKEY-123"}, body=b"{ nope")
+        r = self._post({"Content-Type": "application/json", "X-DZ23-Callback": self.secret}, body=b"{ nope")
         self.assertEqual(r.status_code, 400)
 
     def test_wrong_instance_409(self):
         body = json.dumps({"instance": "outra_instancia", "data": {}}).encode()
-        r = self._post({"Content-Type": "application/json", "apikey": "TESTKEY-123"}, body=body)
+        r = self._post({"Content-Type": "application/json", "X-DZ23-Callback": self.secret}, body=body)
         self.assertEqual(r.status_code, 409)
 
-    def test_no_apikey_configured_503(self):
-        self.channel.evo_apikey = False
-        r = self._post({"Content-Type": "application/json", "apikey": "x"})
+    def test_meta_no_app_secret_503(self):
+        # Canal Meta sem App Secret => canal desabilitado (503), reachable pois
+        # meta_app_secret não é obrigatório (callback_secret do Evolution é).
+        meta = self.env["dz23.channel"].create({
+            "name": "Meta sem secret", "company_id": self.env.company.id,
+            "provider": "meta_cloud",
+        })
+        r = self.url_open("/dz23/whatsapp/meta/webhook/%s" % meta.webhook_token,
+                          data=b"{}", headers={"Content-Type": "application/json"}, timeout=30)
         self.assertEqual(r.status_code, 503)
 
-    def test_cross_channel_token_isolation(self):
-        # apikey de outro canal não autentica neste token
+    def test_cross_channel_secret_isolation(self):
+        # segredo de outro canal não autentica neste token
         other = self.env["dz23.channel"].create({
             "name": "Outro", "company_id": self.env.company.id, "provider": "evolution",
             "evo_base": "http://evo.local:8080", "evo_instance": "inst_outra",
             "evo_apikey": "OTHERKEY-999",
         })
-        r = self._post({"Content-Type": "application/json", "apikey": other.evo_apikey})
+        r = self._post({"Content-Type": "application/json", "X-DZ23-Callback": other.callback_secret})
         self.assertEqual(r.status_code, 401)

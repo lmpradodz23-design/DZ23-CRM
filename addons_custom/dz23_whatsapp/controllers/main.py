@@ -41,14 +41,15 @@ class DZ23WhatsAppWebhook(http.Controller):
                 auth="public", methods=["POST"], csrf=False)
     def evolution_webhook(self, token, **_kw):
         channel = request.env["dz23.channel"]._resolve_by_token(token)
-        # FAIL-CLOSED: token desconhecido ou canal sem apikey => recusa.
+        # FAIL-CLOSED: token desconhecido ou canal sem segredo de callback => recusa.
         if not channel or channel.provider != "evolution":
             return request.make_response("not found", status=404)
-        if not channel.evo_apikey:
+        if not channel.callback_secret:
             return request.make_response("service unavailable", status=503)
-        req_key = request.httprequest.headers.get("apikey", "")
-        if not _const_eq(req_key, channel.evo_apikey):
-            _logger.warning("Evolution webhook REJEITADO (apikey) canal=%s", channel.id)
+        # Autentica pelo segredo de callback do canal (independente da chave admin).
+        req_secret = request.httprequest.headers.get("X-DZ23-Callback", "")
+        if not _const_eq(req_secret, channel.callback_secret):
+            _logger.warning("Evolution webhook REJEITADO (callback) canal=%s", channel.id)
             return request.make_response("unauthorized", status=401)
         parsed, err = _read_body()
         if err:
