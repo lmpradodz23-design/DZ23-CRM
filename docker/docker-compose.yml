@@ -1,0 +1,33 @@
+# Ambiente de DEV/TESTE do DZ23 CRM — Odoo 19 + PostgreSQL.
+# Sobe a imagem OFICIAL odoo:19 montando nossos módulos (addons_custom).
+# NÃO é produção: senhas de dev vêm do .env (fora do Git).
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-odoo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odoo_dev}
+    volumes:
+      - dz23-db:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  odoo:
+    image: odoo:19
+    depends_on:
+      - db
+    ports:
+      - "8069:8069"
+    environment:
+      HOST: db
+      USER: ${POSTGRES_USER:-odoo}
+      PASSWORD: ${POSTGRES_PASSWORD:-odoo_dev}
+    volumes:
+      - ../addons_custom:/mnt/extra-addons
+      - ./odoo.conf:/etc/odoo/odoo.conf
+      - dz23-odoo:/var/lib/odoo
+    restart: unless-stopped
+
+volumes:
+  dz23-db:
+  dz23-odoo:

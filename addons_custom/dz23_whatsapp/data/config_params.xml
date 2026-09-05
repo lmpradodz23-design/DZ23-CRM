@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Provedor padrão (o admin ajusta em Ajustes). Sem segredo aqui. -->
+        <record id="dz23_whatsapp_provider" model="ir.config_parameter">
+            <field name="key">dz23.whatsapp_provider</field>
+            <field name="value">meta_cloud</field>
+        </record>
+    </data>
+</odoo>

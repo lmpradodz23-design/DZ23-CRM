@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="dz23_crm_lead_view_form" model="ir.ui.view">
+        <field name="name">dz23.crm.lead.form.whatsapp</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Link "Falar no WhatsApp" (wa.me) logo após o telefone -->
+            <xpath expr="//field[@name='phone']" position="after">
+                <field name="dz23_whatsapp_link" widget="url"
+                       text="Falar no WhatsApp" readonly="1"
+                       invisible="not dz23_whatsapp_link"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

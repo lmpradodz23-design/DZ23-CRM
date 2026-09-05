@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="dz23_whatsapp_res_config_settings_view" model="ir.ui.view">
+        <field name="name">dz23.whatsapp.res.config.settings</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app string="DZ23 WhatsApp" name="dz23_whatsapp">
+                    <block title="Provedor e credenciais"
+                           help="Credenciais ficam no servidor; nunca no código. Em dev, use chaves de teste.">
+                        <setting string="Provedor ativo" help="Escolha por onde o WhatsApp é enviado.">
+                            <field name="dz23_whatsapp_provider"/>
+                        </setting>
+                        <setting string="Meta WhatsApp Cloud API"
+                                 help="Oficial. Mensagens iniciadas por você exigem templates aprovados pela Meta.">
+                            <div class="content-group">
+                                <field name="dz23_wa_meta_phone_id" placeholder="phone_number_id"/>
+                                <field name="dz23_wa_meta_token" password="True" placeholder="token permanente"/>
+                                <field name="dz23_wa_meta_version"/>
+                            </div>
+                        </setting>
+                        <setting string="Twilio (BSP)" help="Você já possui conta Twilio.">
+                            <div class="content-group">
+                                <field name="dz23_wa_twilio_sid" placeholder="Account SID"/>
+                                <field name="dz23_wa_twilio_token" password="True" placeholder="Auth Token"/>
+                                <field name="dz23_wa_twilio_from" placeholder="+14155238886"/>
+                            </div>
+                        </setting>
+                        <setting string="Evolution API (não-oficial)"
+                                 help="Grátis, mas risco de banimento do número — evite como base de SaaS revendido.">
+                            <div class="content-group">
+                                <field name="dz23_wa_evo_base" placeholder="https://evo.seu-dominio.com"/>
+                                <field name="dz23_wa_evo_instance" placeholder="nome-da-instancia"/>
+                                <field name="dz23_wa_evo_apikey" password="True" placeholder="apikey"/>
+                            </div>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+</odoo>

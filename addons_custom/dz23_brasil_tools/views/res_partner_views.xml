@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Adiciona botões de busca e a aba de enriquecimento ao cadastro de parceiro -->
+    <record id="dz23_view_partner_form" model="ir.ui.view">
+        <field name="name">dz23.res.partner.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Botão "Enriquecer via CNPJ" logo após o campo NIF/CNPJ (vat) -->
+            <xpath expr="//field[@name='vat']" position="after">
+                <button name="action_dz23_enriquecer_cnpj" type="object"
+                        string="Enriquecer via CNPJ" class="btn-link ps-0"
+                        icon="fa-cloud-download"
+                        help="Busca dados na Receita via BrasilAPI e preenche automaticamente."/>
+            </xpath>
+
+            <!-- Botão "Buscar CEP" após o campo zip -->
+            <xpath expr="//field[@name='zip']" position="after">
+                <button name="action_dz23_buscar_cep" type="object"
+                        string="Buscar CEP" class="btn-link ps-0"
+                        icon="fa-search"
+                        help="Preenche o endereço a partir do CEP (BrasilAPI)."/>
+            </xpath>
+
+            <!-- Aba DZ23 com enriquecimento e link de WhatsApp -->
+            <xpath expr="//notebook" position="inside">
+                <page string="DZ23" name="dz23_page">
+                    <group>
+                        <group string="Enriquecimento (CNPJ)">
+                            <field name="dz23_cnpj_situacao"/>
+                            <field name="dz23_cnpj_porte"/>
+                            <field name="dz23_cnpj_cnae"/>
+                            <field name="dz23_cnpj_natureza"/>
+                            <field name="dz23_simples_nacional"/>
+                            <field name="dz23_mei"/>
+                            <field name="dz23_last_enrich"/>
+                        </group>
+                        <group string="Contato rápido">
+                            <field name="dz23_whatsapp_link" widget="url" text="Abrir no WhatsApp"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

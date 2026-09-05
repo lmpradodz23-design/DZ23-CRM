@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================
+         REBRAND DAS PÁGINAS WEB (login, layout, favicon, título)
+         Herança de templates do módulo `web`. NÃO edita o core.
+         ============================================================ -->
+
+    <!-- web.layout: título default "Odoo" -> "DZ23 CRM" e favicon -> DZ23 -->
+    <template id="dz23_layout_title_favicon" inherit_id="web.layout"
+              name="DZ23: título + favicon">
+        <xpath expr="//title" position="replace">
+            <title t-esc="title or 'DZ23 CRM'"/>
+        </xpath>
+        <xpath expr="//link[@rel='shortcut icon']" position="attributes">
+            <attribute name="t-att-href">x_icon or '/dz23_branding/static/src/img/favicon.png'</attribute>
+        </xpath>
+    </template>
+
+    <!-- web.login_layout: remover o link "Powered by Odoo" (odoo.com) -->
+    <template id="dz23_login_layout" inherit_id="web.login_layout"
+              name="DZ23: rodapé do login">
+        <xpath expr="//a[contains(@href, 'utm_medium=auth')]" position="replace">
+            <span class="text-muted">DZ23 CRM</span>
+        </xpath>
+    </template>
+
+    <!-- web.brand_promotion_message: troca "Powered by Odoo" por marca DZ23 -->
+    <template id="dz23_brand_promotion_message" inherit_id="web.brand_promotion_message"
+              name="DZ23: brand promotion">
+        <xpath expr="//t[@t-set='odoo_logo']" position="replace">
+            <t t-set="odoo_logo">
+                <span class="badge text-bg-light">DZ23 CRM</span>
+            </t>
+        </xpath>
+        <xpath expr="//t[@t-set='final_message']" position="replace">
+            <t t-set="final_message">%s%s</t>
+        </xpath>
+    </template>
+
+    <!-- webclient_bootstrap: theme-color roxo do Odoo -> navy DZ23 -->
+    <template id="dz23_webclient_theme_color" inherit_id="web.webclient_bootstrap"
+              name="DZ23: theme-color + apple-touch-icon">
+        <xpath expr="//meta[@name='theme-color']" position="attributes">
+            <attribute name="content">#003175</attribute>
+        </xpath>
+        <xpath expr="//link[@rel='apple-touch-icon']" position="attributes">
+            <attribute name="href">/dz23_branding/static/src/img/apple-touch-icon.png</attribute>
+        </xpath>
+    </template>
+</odoo>

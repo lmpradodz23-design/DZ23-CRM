@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Base da BrasilAPI (gratuita). Trocável para APIBrasil paga se preciso. -->
+        <record id="dz23_brasilapi_base" model="ir.config_parameter">
+            <field name="key">dz23.brasilapi_base</field>
+            <field name="value">https://brasilapi.com.br/api</field>
+        </record>
+    </data>
+</odoo>

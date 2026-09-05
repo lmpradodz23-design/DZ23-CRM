@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+      Rebrand por DADOS: logo, favicon, cores de e-mail e rodapé legal.
+      noupdate="0" para reaplicar em upgrade do módulo. Aplica na empresa
+      principal (base.main_company); em multi-empresa, cada tenant ajusta a sua.
+    -->
+    <data noupdate="0">
+        <record id="base.main_company" model="res.company">
+            <field name="name">DZ23 CRM</field>
+            <field name="logo" type="base64"
+                   file="dz23_branding/static/src/img/dz23crm_logo.png"/>
+            <field name="favicon" type="base64"
+                   file="dz23_branding/static/src/img/favicon.png"/>
+            <!-- Cores da marca DZ23 usadas nos e-mails de notificação -->
+            <field name="email_primary_color">#FFFFFF</field>
+            <field name="email_secondary_color">#003175</field>
+            <field name="website">https://www.dz23.com.br</field>
+            <!-- Rodapé de relatórios/PDF: remove qualquer marca padrão e usa a legal do DZ23 -->
+            <field name="report_footer">DZ23 CRM — LEANDRO MARCOS PRADO LTDA · CNPJ 64.339.333/0001-22 · Águas Lindas de Goiás/GO · WhatsApp +55 61 98100-3000</field>
+        </record>
+
+        <!-- Nome do app PWA (manifest) — Odoo usa 'Odoo' por padrão -->
+        <record id="dz23_web_app_name" model="ir.config_parameter">
+            <field name="key">web.web_app_name</field>
+            <field name="value">DZ23 CRM</field>
+        </record>
+    </data>
+</odoo>

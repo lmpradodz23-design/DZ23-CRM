@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================
+         REBRAND DO PORTAL: remover "Powered by Odoo" da sidebar.
+         Herança de portal.portal_record_sidebar.
+         ============================================================ -->
+    <template id="dz23_portal_record_sidebar" inherit_id="portal.portal_record_sidebar"
+              name="DZ23: rodapé do portal">
+        <xpath expr="//div[a[contains(@href, 'odoo.com')]]" position="replace">
+            <div class="d-none d-lg-block mt-5 small text-center text-muted">
+                DZ23 CRM
+            </div>
+        </xpath>
+    </template>
+</odoo>

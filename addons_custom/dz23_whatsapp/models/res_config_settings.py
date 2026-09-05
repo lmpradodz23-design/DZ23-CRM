@@ -1,0 +1,51 @@
+# -*- coding: utf-8 -*-
+from odoo import fields, models
+
+
+class ResConfigSettings(models.TransientModel):
+    _inherit = "res.config.settings"
+
+    # Provedor ativo
+    dz23_whatsapp_provider = fields.Selection(
+        selection=[
+            ("meta_cloud", "Meta WhatsApp Cloud API (oficial)"),
+            ("twilio", "Twilio (BSP oficial)"),
+            ("evolution", "Evolution API (não-oficial)"),
+        ],
+        string="Provedor de WhatsApp",
+        default="meta_cloud",
+        config_parameter="dz23.whatsapp_provider",
+    )
+
+    # Meta Cloud API
+    dz23_wa_meta_phone_id = fields.Char(
+        "Meta phone_number_id", config_parameter="dz23.whatsapp.meta_phone_id"
+    )
+    dz23_wa_meta_token = fields.Char(
+        "Meta token (permanente)", config_parameter="dz23.whatsapp.meta_token"
+    )
+    dz23_wa_meta_version = fields.Char(
+        "Meta API version", default="v20.0", config_parameter="dz23.whatsapp.meta_api_version"
+    )
+
+    # Twilio
+    dz23_wa_twilio_sid = fields.Char(
+        "Twilio Account SID", config_parameter="dz23.whatsapp.twilio_sid"
+    )
+    dz23_wa_twilio_token = fields.Char(
+        "Twilio Auth Token", config_parameter="dz23.whatsapp.twilio_token"
+    )
+    dz23_wa_twilio_from = fields.Char(
+        "Twilio número 'from'", config_parameter="dz23.whatsapp.twilio_from"
+    )
+
+    # Evolution API
+    dz23_wa_evo_base = fields.Char(
+        "Evolution base URL", config_parameter="dz23.whatsapp.evolution_base"
+    )
+    dz23_wa_evo_instance = fields.Char(
+        "Evolution instância", config_parameter="dz23.whatsapp.evolution_instance"
+    )
+    dz23_wa_evo_apikey = fields.Char(
+        "Evolution apikey", config_parameter="dz23.whatsapp.evolution_apikey"
+    )

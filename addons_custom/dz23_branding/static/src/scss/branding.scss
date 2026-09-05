@@ -1,0 +1,19 @@
+// DZ23 CRM — ajustes visuais de marca (cores navy + turquesa).
+// Mantido enxuto para não conflitar com o tema do Odoo.
+
+:root {
+    --dz23-navy: #003175;
+    --dz23-teal: #16B1B4;
+}
+
+// Botão primário com o navy da marca (login e backend).
+.btn-primary {
+    --o-btn-primary-bg: var(--dz23-navy);
+    background-color: var(--dz23-navy);
+    border-color: var(--dz23-navy);
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #00285f;
+    border-color: #00285f;
+}
