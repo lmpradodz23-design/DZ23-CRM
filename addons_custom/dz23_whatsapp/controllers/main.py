@@ -1,16 +1,25 @@
 # -*- coding: utf-8 -*-
-# Webhook de entrada do WhatsApp (Meta Cloud API).
-# - GET: verificação do webhook (hub.challenge).
-# - POST: valida assinatura HMAC (X-Hub-Signature-256) com o App Secret antes de
-#   processar. Loga apenas metadados (sem PII/conteúdo de mensagem).
+# Webhook de entrada do WhatsApp (Meta Cloud API + Evolution API).
+# Todos os endpoints são FAIL-CLOSED: sem credencial configurada => 503;
+# credencial ausente/inválida => 401; corpo grande => 413; JSON inválido => 400.
+# Loga apenas metadados (sem PII/conteúdo de mensagem).
 import hashlib
 import hmac
+import json
 import logging
 
 from odoo import http
 from odoo.http import request
 
 _logger = logging.getLogger(__name__)
+
+# Limite de corpo aceito no webhook (defesa contra abuso/DoS de payload).
+_MAX_BODY = 1 * 1024 * 1024  # 1 MiB
+
+
+def _const_eq(a, b):
+    """Comparação de tempo constante entre duas strings (evita timing attack)."""
+    return hmac.compare_digest((a or "").encode(), (b or "").encode())
 
 
 def _valid_meta_signature(raw_body, header_sig, app_secret):
@@ -39,17 +48,28 @@ class DZ23WhatsAppWebhook(http.Controller):
     @http.route("/dz23/whatsapp/webhook", type="http", auth="public",
                 methods=["POST"], csrf=False)
     def receive(self, **_kwargs):
-        raw = request.httprequest.get_data() or b""
-        header_sig = request.httprequest.headers.get("X-Hub-Signature-256", "")
         app_secret = request.env["ir.config_parameter"].sudo().get_param(
             "dz23.whatsapp.meta_app_secret", ""
         )
+        # FAIL-CLOSED: sem App Secret configurado, o canal Meta está desabilitado.
+        if not app_secret:
+            _logger.warning("Meta webhook chamado sem App Secret configurado — 503.")
+            return request.make_response("service unavailable", status=503)
+        raw = request.httprequest.get_data() or b""
+        if len(raw) > _MAX_BODY:
+            return request.make_response("payload too large", status=413)
+        header_sig = request.httprequest.headers.get("X-Hub-Signature-256", "")
         # FAIL-CLOSED: exige assinatura válida da Meta antes de qualquer processamento.
         if not _valid_meta_signature(raw, header_sig, app_secret):
             _logger.warning("WhatsApp webhook REJEITADO (assinatura ausente/inválida).")
             return request.make_response("unauthorized", status=401)
 
-        data = request.get_json_data() or {}
+        try:
+            data = json.loads(raw or b"{}")
+        except ValueError:
+            return request.make_response("bad request", status=400)
+        if not isinstance(data, dict):
+            return request.make_response("bad request", status=400)
         svc = request.env["dz23.whatsapp"].sudo()
         number, text = svc._parse_meta_inbound(data)
         if number and text:
@@ -65,17 +85,26 @@ class DZ23WhatsAppWebhook(http.Controller):
                 methods=["POST"], csrf=False)
     def evolution_webhook(self, **_kwargs):
         """Recebe eventos da Evolution API (MESSAGES_UPSERT) e aciona o agente."""
-        raw = request.httprequest.get_data() or b""
-        # Valida a apikey (Evolution envia no header 'apikey') se estiver configurada.
-        cfg_key = request.env["ir.config_parameter"].sudo().get_param("dz23.whatsapp.evolution_apikey", "")
+        cfg_key = request.env["ir.config_parameter"].sudo().get_param(
+            "dz23.whatsapp.evolution_apikey", "")
+        # FAIL-CLOSED: sem apikey configurada, o canal Evolution está desabilitado.
+        if not cfg_key:
+            _logger.warning("Evolution webhook chamado sem apikey configurada — 503.")
+            return request.make_response("service unavailable", status=503)
+        # Credencial obrigatória, comparada em tempo constante (Evolution manda no header 'apikey').
         req_key = request.httprequest.headers.get("apikey", "")
-        if cfg_key and req_key and req_key != cfg_key:
+        if not _const_eq(req_key, cfg_key):
+            _logger.warning("Evolution webhook REJEITADO (apikey ausente/inválida).")
             return request.make_response("unauthorized", status=401)
-        import json
+        raw = request.httprequest.get_data() or b""
+        if len(raw) > _MAX_BODY:
+            return request.make_response("payload too large", status=413)
         try:
             data = json.loads(raw or b"{}")
         except ValueError:
-            data = {}
+            return request.make_response("bad request", status=400)
+        if not isinstance(data, dict):
+            return request.make_response("bad request", status=400)
         svc = request.env["dz23.whatsapp"].sudo()
         number, text = svc._parse_evolution_inbound(data)
         if number and text:
