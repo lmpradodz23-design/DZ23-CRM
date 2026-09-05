@@ -1,0 +1,31 @@
+# Ollama (IA local) declarado como serviço — NÃO exposto publicamente.
+# MEDIUM-09: o container Ollama estava em 0.0.0.0:11434 sem autenticação.
+# Aqui fica em 127.0.0.1 (loopback) e na rede compartilhada dz23net, alcançável
+# pelos containers por nome (http://dz23-ollama:11434), sem exposição externa.
+#
+# Aplicar (quando o Docker voltar):
+#   docker rm -f dz23-ollama            # remove o container antigo (0.0.0.0)
+#   docker compose -p dz23 -f docker/ollama.yml --env-file docker/.env up -d
+#   docker network connect dz23net dz23-ollama   # se ainda não estiver
+services:
+  ollama:
+    image: ollama/ollama:0.5.7
+    container_name: dz23-ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - dz23-ollama:/root/.ollama
+    networks:
+      - dz23net
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+volumes:
+  dz23-ollama:
+    external: true
+    name: ollama
+
+networks:
+  dz23net:
+    external: true

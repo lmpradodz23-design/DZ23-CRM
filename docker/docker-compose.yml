@@ -31,13 +31,19 @@ services:
       PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
       ODOO_MASTER_PASSWORD: ${ODOO_MASTER_PASSWORD:?defina ODOO_MASTER_PASSWORD no .env}
     # Gera um conf temporário no container (nunca no host/git) com a senha mestra
-    # e os parâmetros de banco vindos do ambiente, e sobe o Odoo com ele.
+    # e os parâmetros de banco. Modo 0600 (umask 077 + install -m 600), escrita
+    # atômica e unset das variáveis após uso (MEDIUM-04: não deixar segredo
+    # legível por outros usuários do container).
     command: >
-      bash -c 'cp /etc/odoo/odoo.conf /tmp/odoo.conf &&
+      bash -c 'umask 077 &&
+      install -m 600 /dev/null /tmp/odoo.conf.tmp &&
+      cat /etc/odoo/odoo.conf > /tmp/odoo.conf.tmp &&
       { echo "admin_passwd = $$ODOO_MASTER_PASSWORD";
         echo "db_host = $$HOST";
         echo "db_user = $$USER";
-        echo "db_password = $$PASSWORD"; } >> /tmp/odoo.conf &&
+        echo "db_password = $$PASSWORD"; } >> /tmp/odoo.conf.tmp &&
+      mv /tmp/odoo.conf.tmp /tmp/odoo.conf &&
+      unset ODOO_MASTER_PASSWORD PASSWORD &&
       exec odoo -c /tmp/odoo.conf'
     volumes:
       - ../addons_custom:/mnt/extra-addons
