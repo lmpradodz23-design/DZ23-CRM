@@ -15,10 +15,10 @@ class CrmLead(models.Model):
         "Link WhatsApp", compute="_compute_dz23_whatsapp_link", store=False
     )
 
-    @api.depends("mobile", "phone")
+    @api.depends("phone")
     def _compute_dz23_whatsapp_link(self):
         for lead in self:
-            raw = _only_digits(lead.mobile or lead.phone or "")
+            raw = _only_digits(lead.phone or "")
             link = False
             if raw:
                 if not raw.startswith("55") and len(raw) in (10, 11):

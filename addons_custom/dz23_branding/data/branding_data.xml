@@ -10,8 +10,6 @@
             <field name="name">DZ23 CRM</field>
             <field name="logo" type="base64"
                    file="dz23_branding/static/src/img/dz23crm_logo.png"/>
-            <field name="favicon" type="base64"
-                   file="dz23_branding/static/src/img/favicon.png"/>
             <!-- Cores da marca DZ23 usadas nos e-mails de notificação -->
             <field name="email_primary_color">#FFFFFF</field>
             <field name="email_secondary_color">#003175</field>

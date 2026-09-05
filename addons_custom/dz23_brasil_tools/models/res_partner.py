@@ -23,10 +23,10 @@ class ResPartner(models.Model):
         "Link WhatsApp", compute="_compute_dz23_whatsapp_link", store=False
     )
 
-    @api.depends("mobile", "phone")
+    @api.depends("phone")
     def _compute_dz23_whatsapp_link(self):
         for p in self:
-            raw = only_digits(p.mobile or p.phone or "")
+            raw = only_digits(p.phone or "")
             link = False
             if raw:
                 # normaliza para E.164 BR (adiciona 55 quando faltar)
