@@ -3,3 +3,5 @@ access_dz23_whatsapp_compose,dz23.whatsapp.compose.user,model_dz23_whatsapp_comp
 access_dz23_whatsapp_evolution,dz23.whatsapp.evolution.user,model_dz23_whatsapp_evolution,base.group_system,1,1,1,1
 access_dz23_channel_user,dz23.channel.user,model_dz23_channel,base.group_user,1,0,0,0
 access_dz23_channel_manager,dz23.channel.manager,model_dz23_channel,base.group_system,1,1,1,1
+access_dz23_channel_contact_user,dz23.channel.contact.user,model_dz23_channel_contact,base.group_user,1,1,1,0
+access_dz23_channel_contact_manager,dz23.channel.contact.manager,model_dz23_channel_contact,base.group_system,1,1,1,1

@@ -33,3 +33,29 @@ class TestChannelTenancy(TransactionCase):
     def test_token_uniqueness(self):
         # tokens são gerados distintos por canal
         self.assertNotEqual(self.chA.webhook_token, self.chB.webhook_token)
+        self.assertNotEqual(self.chA.callback_secret, self.chB.callback_secret)
+
+    def test_provider_channel_id_uniqueness(self):
+        # Mesma instância Evolution em dois canais é proibida (validação dispara
+        # antes do SQL): esperamos ValidationError.
+        from odoo.exceptions import ValidationError
+        self.chA.evo_instance = "inst_dup"
+        self.chA.flush_recordset()
+        with self.assertRaises(ValidationError):
+            self.chB.evo_instance = "inst_dup"
+            self.chB.flush_recordset()
+
+    def test_same_phone_suffix_distinct_identities(self):
+        # Mesmo número em canais/empresas diferentes => identidades DISTINTAS,
+        # cada uma escopada ao seu canal/empresa (sem colisão global).
+        Contact = self.env["dz23.channel.contact"]
+        num = "5561999998888"
+        cA = Contact._get_or_create(self.chA, num, num)
+        cB = Contact._get_or_create(self.chB, num, num)
+        self.assertNotEqual(cA.id, cB.id)
+        self.assertEqual(cA.company_id, self.cA)
+        self.assertEqual(cB.company_id, self.cB)
+        # usuário de A não enxerga a identidade de B
+        visiveis = Contact.with_user(self.userA).search([("provider_user_id", "=", num)])
+        self.assertIn(cA, visiveis)
+        self.assertNotIn(cB, visiveis)

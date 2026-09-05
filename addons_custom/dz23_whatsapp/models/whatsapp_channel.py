@@ -31,6 +31,39 @@ def _e164_br(number):
     return raw
 
 
+def ensure_bot_user(env):
+    """Cria (idempotente) o usuário técnico dz23_whatsapp_bot via ORM (aplica os
+    defaults dos campos, evitando NOT NULL em res_partner) e registra o xmlid.
+    Chamado no post_init (instalação) e na migração (upgrade)."""
+    imd = env["ir.model.data"]
+    existing = imd.search([("module", "=", "dz23_whatsapp"),
+                           ("name", "=", "user_dz23_bot")], limit=1)
+    if existing:
+        return env["res.users"].browse(existing.res_id)
+    groups = [env.ref("base.group_user").id]
+    salesman = env.ref("sales_team.group_sale_salesman", raise_if_not_found=False)
+    if salesman:
+        groups.append(salesman.id)
+    vals = {
+        "name": "DZ23 WhatsApp Bot",
+        "login": "dz23_whatsapp_bot",
+        "share": False,
+        "group_ids": [(6, 0, groups)],
+    }
+    # Alguns campos NOT NULL de res.partner (ex.: autopost_bills do account) não
+    # recebem default neste create em tempo de load; preenche defensivamente.
+    Partner = env["res.partner"]
+    if "autopost_bills" in Partner._fields:
+        vals["autopost_bills"] = Partner.default_get(
+            ["autopost_bills"]).get("autopost_bills") or "never"
+    bot = env["res.users"].with_context(no_reset_password=True).create(vals)
+    imd.create({
+        "module": "dz23_whatsapp", "name": "user_dz23_bot",
+        "model": "res.users", "res_id": bot.id, "noupdate": True,
+    })
+    return bot
+
+
 class DZ23Channel(models.Model):
     _name = "dz23.channel"
     _description = "DZ23 — Canal de mensageria (multi-tenant, por empresa)"
@@ -46,6 +79,11 @@ class DZ23Channel(models.Model):
         [("evolution", "Evolution API"), ("meta_cloud", "Meta WhatsApp Cloud"),
          ("twilio", "Twilio")],
         required=True, default="evolution")
+    # Identificador do canal no provedor (instance/phone_id/from), único por
+    # provedor. Base para resolver o canal e validar o payload.
+    provider_channel_id = fields.Char(
+        compute="_compute_provider_channel_id", store=True, index=True,
+        string="ID do canal no provedor")
     # Token opaco que identifica o canal na URL do webhook (não é segredo de
     # autenticação — a auth é por apikey/app_secret do canal — mas evita expor
     # instância/empresa e permite rotear sem varredura global).
@@ -79,6 +117,49 @@ class DZ23Channel(models.Model):
 
     _webhook_token_uniq = models.Constraint(
         "unique(webhook_token)", "Token de webhook duplicado.")
+    _provider_channel_uniq = models.Constraint(
+        "unique(provider, provider_channel_id)",
+        "Já existe um canal com esse provedor e identificador.")
+
+    @api.depends("provider", "evo_instance", "meta_phone_id", "twilio_from")
+    def _compute_provider_channel_id(self):
+        for ch in self:
+            ch.provider_channel_id = {
+                "evolution": ch.evo_instance,
+                "meta_cloud": ch.meta_phone_id,
+                "twilio": ch.twilio_from,
+            }.get(ch.provider) or False
+
+    # ---- usuário técnico (para sair do sudo no processamento) -------------
+    def _bot_user(self):
+        """Usuário técnico; criado sob demanda em runtime (quando o account já
+        está carregado), nunca em tempo de load do módulo."""
+        user = self.env.ref("dz23_whatsapp.user_dz23_bot", raise_if_not_found=False)
+        if not user:
+            user = ensure_bot_user(self.env)
+        return user
+
+    def _ensure_bot_in_company(self):
+        """Garante que o usuário técnico existe e pertence à empresa do canal."""
+        bot = self.sudo()._bot_user()
+        if not bot:
+            return
+        for ch in self:
+            if ch.company_id and ch.company_id.id not in bot.company_ids.ids:
+                bot.write({"company_ids": [(4, ch.company_id.id)]})
+
+    def _processing_self(self):
+        """Retorna o canal para processar inbound: usuário TÉCNICO (não sudo),
+        no escopo estrito da empresa do canal, sujeito às record rules."""
+        self.ensure_one()
+        self.sudo()._ensure_bot_in_company()
+        bot = self.sudo()._bot_user()
+        company = self.sudo().company_id
+        if bot:
+            return self.with_user(bot).with_company(company).with_context(
+                allowed_company_ids=[company.id])
+        # fallback (sem bot): escopo por empresa via sudo
+        return self.sudo()._scoped()
 
     @api.constrains("provider", "evo_instance", "company_id")
     def _check_evo_instance_unique(self):

@@ -43,28 +43,24 @@ def _strip_html(v):
 class DZ23ChannelAgent(models.Model):
     _inherit = "dz23.channel"
 
-    # ---- lead escopado por empresa (nunca busca global) -------------------
+    # ---- lead via IDENTIDADE do canal (nunca busca global por telefone) ----
     def _agent_find_lead(self, number):
         self.ensure_one()
-        e164 = _e164_br(number)
-        tail = e164[-11:] if len(e164) >= 11 else e164
+        e164 = _e164_br(number) or _digits(number)
         company = self.company_id
-        Lead = self.env["crm.lead"]
-        dom = [("company_id", "in", (False, company.id))]
-        lead = Lead.search(dom + [("phone", "ilike", tail)], limit=1) if tail else Lead.browse()
-        if lead:
-            return lead
-        Partner = self.env["res.partner"]
-        partner = Partner.search(
-            [("company_id", "in", (False, company.id)), ("phone", "ilike", tail)], limit=1
-        ) if tail else Partner.browse()
-        return Lead.create({
+        # 1) resolve a identidade (channel_id, provider_user_id) — escopo do canal
+        contact = self.env["dz23.channel.contact"]._get_or_create(self, e164, e164)
+        if contact.lead_id:
+            return contact.lead_id
+        lead = self.env["crm.lead"].create({
             "name": _("WhatsApp %s") % number,
             "phone": e164 or number,
             "type": "lead",
             "company_id": company.id,
-            "partner_id": partner.id if partner else False,
+            "partner_id": contact.partner_id.id if contact.partner_id else False,
         })
+        contact.lead_id = lead.id
+        return lead
 
     def _agent_partner_for(self, lead):
         if lead.partner_id:

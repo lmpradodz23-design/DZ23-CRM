@@ -63,7 +63,9 @@ class DZ23WhatsAppWebhook(http.Controller):
         number, text = svc._parse_evolution_inbound(data)
         if number and text:
             try:
-                channel.sudo()._scoped().handle_inbound(number, text, data)
+                # sudo() só resolveu/autenticou o canal; o processamento roda
+                # como usuário TÉCNICO sujeito às record rules por empresa.
+                channel._processing_self().handle_inbound(number, text, data)
             except Exception:  # noqa: BLE001 - webhook nunca estoura 500
                 _logger.exception("Falha ao processar inbound Evolution canal=%s", channel.id)
         return request.make_response("ok")
@@ -108,7 +110,7 @@ class DZ23WhatsAppWebhook(http.Controller):
         number, text = svc._parse_meta_inbound(data)
         if number and text:
             try:
-                channel.sudo()._scoped().handle_inbound(number, text, data)
+                channel._processing_self().handle_inbound(number, text, data)
             except Exception:  # noqa: BLE001
                 _logger.exception("Falha ao processar inbound Meta canal=%s", channel.id)
         return request.make_response("ok")

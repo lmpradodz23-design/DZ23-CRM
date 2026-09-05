@@ -7,4 +7,11 @@
         <field name="domain_force">[('company_id','in',company_ids)]</field>
         <field name="global" eval="True"/>
     </record>
+
+    <record id="dz23_channel_contact_company_rule" model="ir.rule">
+        <field name="name">dz23.channel.contact: por empresa</field>
+        <field name="model_id" ref="model_dz23_channel_contact"/>
+        <field name="domain_force">[('company_id','in',company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
 </odoo>
