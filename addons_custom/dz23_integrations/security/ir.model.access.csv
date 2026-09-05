@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_dz23_integration_user,dz23.integration.user,model_dz23_integration,base.group_user,1,0,0,0
+access_dz23_integration_admin,dz23.integration.admin,model_dz23_integration,base.group_system,1,1,1,1

@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- ===================== IA ===================== -->
+        <record id="int_ollama" model="dz23.integration">
+            <field name="name">IA Local (Ollama)</field><field name="category">ia</field>
+            <field name="sequence">1</field><field name="available" eval="True"/>
+            <field name="config_param">dz23.ai.ollama_base</field>
+            <field name="description">Modelo de IA local — grátis, sem custo de token.</field>
+            <field name="official_url">https://ollama.com</field>
+            <field name="how_to" type="html"><ol>
+                <li>Instale o Ollama na máquina/servidor (ollama.com/download).</li>
+                <li>Rode um modelo: <code>ollama run llama3.1</code> (ou llava para imagens).</li>
+                <li>Em Ajustes &gt; DZ23 IA, provedor "Local (Ollama)"; base <code>http://host.docker.internal:11434</code>. Custo de token: zero.</li>
+            </ol></field>
+        </record>
+        <record id="int_groq" model="dz23.integration">
+            <field name="name">Groq (free-tier)</field><field name="category">ia</field>
+            <field name="config_param">dz23.ai.groq_key</field>
+            <field name="description">IA rápida com camada gratuita (OpenAI-compatible).</field>
+            <field name="official_url">https://console.groq.com/keys</field>
+            <field name="how_to" type="html"><ol>
+                <li>Crie conta em console.groq.com e abra "API Keys".</li>
+                <li>Gere uma key (começa com <code>gsk_</code>).</li>
+                <li>Cole em Ajustes &gt; DZ23 IA &gt; Groq API key e escolha o provedor Groq.</li>
+            </ol></field>
+        </record>
+        <record id="int_gemini" model="dz23.integration">
+            <field name="name">Google Gemini (free-tier)</field><field name="category">ia</field>
+            <field name="config_param">dz23.ai.google_key</field>
+            <field name="description">IA do Google com camada gratuita; texto e visão.</field>
+            <field name="official_url">https://aistudio.google.com/app/apikey</field>
+            <field name="how_to" type="html"><ol>
+                <li>Acesse aistudio.google.com &gt; "Get API key".</li>
+                <li>Crie a chave da API do Gemini.</li>
+                <li>Cole em Ajustes &gt; DZ23 IA &gt; Google (Gemini) API key.</li>
+            </ol></field>
+        </record>
+        <record id="int_openai" model="dz23.integration">
+            <field name="name">OpenAI</field><field name="category">ia</field>
+            <field name="config_param">dz23.ai.openai_key</field>
+            <field name="description">GPT (pago). Texto e visão.</field>
+            <field name="official_url">https://platform.openai.com/api-keys</field>
+            <field name="how_to" type="html"><ol>
+                <li>Em platform.openai.com &gt; API keys, gere uma key (<code>sk-...</code>).</li>
+                <li>Cole em Ajustes &gt; DZ23 IA &gt; OpenAI API key.</li>
+            </ol></field>
+        </record>
+        <record id="int_anthropic" model="dz23.integration">
+            <field name="name">Anthropic (Claude)</field><field name="category">ia</field>
+            <field name="config_param">dz23.ai.anthropic_key</field>
+            <field name="description">Claude (pago). Texto e visão.</field>
+            <field name="official_url">https://console.anthropic.com/settings/keys</field>
+            <field name="how_to" type="html"><ol>
+                <li>Em console.anthropic.com &gt; API Keys, gere a key (<code>sk-ant-...</code>).</li>
+                <li>Cole em Ajustes &gt; DZ23 IA &gt; Anthropic API key.</li>
+            </ol></field>
+        </record>
+        <record id="int_composio" model="dz23.integration">
+            <field name="name">Composio</field><field name="category">ia</field>
+            <field name="config_param">dz23.composio_key</field>
+            <field name="description">Plataforma de ferramentas/ações para agentes de IA (250+ integrações).</field>
+            <field name="official_url">https://app.composio.dev</field>
+            <field name="how_to" type="html"><ol>
+                <li>Crie conta em app.composio.dev e abra "API Keys" (Settings).</li>
+                <li>Gere a API key da Composio.</li>
+                <li>Cole em Ajustes (parâmetro <code>dz23.composio_key</code>) para habilitar ações/ferramentas de IA.</li>
+            </ol></field>
+        </record>
+
+        <!-- ================= Comunicação ================= -->
+        <record id="int_smtp" model="dz23.integration">
+            <field name="name">Servidor SMTP</field><field name="category">comunicacao</field>
+            <field name="available" eval="True"/>
+            <field name="description">Envio de e-mail pelo servidor da empresa (nativo).</field>
+            <field name="official_url">/odoo/action-base_setup.action_general_configuration</field>
+            <field name="how_to" type="html"><ol>
+                <li>Ative o modo desenvolvedor.</li>
+                <li>Ajustes &gt; Técnico &gt; Servidores de E-mail de Saída &gt; Novo.</li>
+                <li>Informe host, porta, usuário e senha do seu SMTP e teste a conexão.</li>
+            </ol></field>
+        </record>
+        <record id="int_gmail" model="dz23.integration">
+            <field name="name">Gmail</field><field name="category">comunicacao</field>
+            <field name="available" eval="True"/>
+            <field name="description">E-mail transacional via Gmail OAuth (nativo).</field>
+            <field name="official_url">https://console.cloud.google.com/apis/credentials</field>
+            <field name="how_to" type="html"><ol>
+                <li>No Google Cloud Console, crie um OAuth Client (tipo Web).</li>
+                <li>Ajustes &gt; Discussão &gt; ative "Gmail" e cole Client ID/Secret.</li>
+                <li>Autorize a conta Gmail que enviará os e-mails.</li>
+            </ol></field>
+        </record>
+        <record id="int_resend" model="dz23.integration">
+            <field name="name">Resend</field><field name="category">comunicacao</field>
+            <field name="available" eval="True"/>
+            <field name="description">E-mail transacional via Resend (relay SMTP).</field>
+            <field name="official_url">https://resend.com/api-keys</field>
+            <field name="how_to" type="html"><ol>
+                <li>Crie conta no Resend, verifique seu domínio (SPF/DKIM).</li>
+                <li>Gere uma API key (<code>re_...</code>).</li>
+                <li>Configure um Servidor SMTP de saída: host <code>smtp.resend.com</code>, usuário <code>resend</code>, senha = a API key.</li>
+            </ol></field>
+        </record>
+        <record id="int_wa_evolution" model="dz23.integration">
+            <field name="name">WhatsApp / Evolution</field><field name="category">comunicacao</field>
+            <field name="config_param">dz23.whatsapp.evolution_apikey</field>
+            <field name="description">WhatsApp via Evolution API (não-oficial). Risco de banimento do número.</field>
+            <field name="official_url">https://doc.evolution-api.com</field>
+            <field name="how_to" type="html"><ol>
+                <li>Suba uma instância Evolution API (self-host) e crie uma instância/QR.</li>
+                <li>Pegue a base URL, o nome da instância e a apikey.</li>
+                <li>Cole em Ajustes &gt; DZ23 WhatsApp &gt; Evolution e selecione o provedor Evolution.</li>
+            </ol></field>
+        </record>
+        <record id="int_wa_meta" model="dz23.integration">
+            <field name="name">WhatsApp oficial (Meta)</field><field name="category">comunicacao</field>
+            <field name="config_param">dz23.whatsapp.meta_token</field>
+            <field name="description">WhatsApp Cloud API (Meta). Mensagens iniciadas exigem templates aprovados.</field>
+            <field name="official_url">https://developers.facebook.com/apps</field>
+            <field name="how_to" type="html"><ol>
+                <li>Em developers.facebook.com crie um App &gt; produto "WhatsApp".</li>
+                <li>Pegue o <b>phone_number_id</b>, um <b>token permanente</b> e o <b>App Secret</b>.</li>
+                <li>Cole em Ajustes &gt; DZ23 WhatsApp &gt; Meta; configure o webhook <code>/dz23/whatsapp/webhook</code> com o verify token.</li>
+            </ol></field>
+        </record>
+        <record id="int_twilio" model="dz23.integration">
+            <field name="name">Twilio</field><field name="category">comunicacao</field>
+            <field name="config_param">dz23.whatsapp.twilio_token</field>
+            <field name="description">WhatsApp/SMS via Twilio (BSP oficial).</field>
+            <field name="official_url">https://console.twilio.com</field>
+            <field name="how_to" type="html"><ol>
+                <li>Em console.twilio.com pegue Account SID e Auth Token.</li>
+                <li>Ative o remetente WhatsApp (sandbox ou número aprovado).</li>
+                <li>Cole em Ajustes &gt; DZ23 WhatsApp &gt; Twilio (SID, token, número "from").</li>
+            </ol></field>
+        </record>
+        <record id="int_meta_social" model="dz23.integration">
+            <field name="name">Instagram / Facebook (Meta)</field><field name="category">comunicacao</field>
+            <field name="available" eval="False"/>
+            <field name="description">Páginas do Facebook e Instagram via OAuth. Requer aprovação do app pela Meta.</field>
+            <field name="official_url">https://developers.facebook.com/apps</field>
+            <field name="how_to" type="html"><ol>
+                <li>Crie um App Meta e adicione permissões de Páginas/Instagram.</li>
+                <li>Submeta o app para revisão da Meta (obrigatório para publicar).</li>
+                <li>Após aprovação, conecte via OAuth. (Requer desenvolvimento adicional.)</li>
+            </ol></field>
+        </record>
+        <record id="int_telegram" model="dz23.integration">
+            <field name="name">Telegram</field><field name="category">comunicacao</field>
+            <field name="available" eval="False"/>
+            <field name="description">Bot e notificações via webhook do Telegram.</field>
+            <field name="official_url">https://core.telegram.org/bots#botfather</field>
+            <field name="how_to" type="html"><ol>
+                <li>Fale com o @BotFather no Telegram e crie um bot.</li>
+                <li>Copie o token do bot.</li>
+                <li>Configure o webhook do bot para o DZ23 (conector sob medida).</li>
+            </ol></field>
+        </record>
+
+        <!-- ================= Pagamento ================= -->
+        <record id="int_stripe" model="dz23.integration">
+            <field name="name">Stripe</field><field name="category">pagamento</field>
+            <field name="available" eval="True"/>
+            <field name="description">Cartão/pagamentos (nativo do Odoo).</field>
+            <field name="official_url">https://dashboard.stripe.com/apikeys</field>
+            <field name="how_to" type="html"><ol>
+                <li>No dashboard Stripe pegue as chaves <b>publishable</b> e <b>secret</b> (use as de teste em dev).</li>
+                <li>Crie um webhook e pegue o <b>signing secret</b>.</li>
+                <li>Em Ajustes &gt; Pagamentos &gt; Stripe, cole as chaves e ative.</li>
+            </ol></field>
+        </record>
+        <record id="int_mercadopago" model="dz23.integration">
+            <field name="name">Mercado Pago</field><field name="category">pagamento</field>
+            <field name="available" eval="True"/>
+            <field name="description">PIX, cartão e boleto (nativo do Odoo).</field>
+            <field name="official_url">https://www.mercadopago.com.br/developers/panel</field>
+            <field name="how_to" type="html"><ol>
+                <li>No painel de desenvolvedores do Mercado Pago, crie uma aplicação.</li>
+                <li>Pegue o Access Token (teste/produção).</li>
+                <li>Em Ajustes &gt; Pagamentos &gt; Mercado Pago, cole e ative.</li>
+            </ol></field>
+        </record>
+        <record id="int_woovi" model="dz23.integration">
+            <field name="name">Woovi (PIX)</field><field name="category">pagamento</field>
+            <field name="config_param">dz23.woovi.webhook_pubkey</field>
+            <field name="description">PIX via Woovi. Requer AppID + chave pública do webhook.</field>
+            <field name="official_url">https://app.woovi.com</field>
+            <field name="how_to" type="html"><ol>
+                <li>Em app.woovi.com &gt; API/Plugins, gere o <b>AppID</b>.</li>
+                <li>Configure o webhook para <code>/payment/woovi/webhook</code> e copie a <b>chave pública</b>.</li>
+                <li>Em Ajustes &gt; Pagamentos &gt; Woovi, cole o AppID; salve a chave pública no parâmetro <code>dz23.woovi.webhook_pubkey</code>.</li>
+            </ol></field>
+        </record>
+
+        <!-- ================= Fiscal ================= -->
+        <record id="int_focusnfe" model="dz23.integration">
+            <field name="name">Focus NFe</field><field name="category">fiscal</field>
+            <field name="config_param">dz23.nfe_token</field>
+            <field name="description">NF-e/NFC-e/NFS-e via API. Requer certificado A1 + conta.</field>
+            <field name="official_url">https://app.focusnfe.com.br</field>
+            <field name="how_to" type="html"><ol>
+                <li>Crie conta na Focus NFe e envie o certificado e-CNPJ A1.</li>
+                <li>Pegue o <b>token</b> de homologação (testes) e produção.</li>
+                <li>Em Ajustes &gt; DZ23 NF-e, escolha "Focus NFe" e cole o token.</li>
+            </ol></field>
+        </record>
+        <record id="int_nfeio" model="dz23.integration">
+            <field name="name">NFE.io</field><field name="category">fiscal</field><field name="available" eval="False"/>
+            <field name="description">Emissão/consulta de NF-e/NFS-e via API.</field>
+            <field name="official_url">https://app.nfe.io</field>
+            <field name="how_to" type="html"><ol><li>Crie conta na NFE.io, envie o certificado A1 e pegue a API key.</li><li>Em Ajustes &gt; DZ23 NF-e, escolha "NFe.io" e cole o token.</li></ol></field>
+        </record>
+        <record id="int_nuvemfiscal" model="dz23.integration">
+            <field name="name">Nuvem Fiscal</field><field name="category">fiscal</field><field name="available" eval="False"/>
+            <field name="description">Emissão fiscal via API.</field>
+            <field name="official_url">https://www.nuvemfiscal.com.br</field>
+            <field name="how_to" type="html"><ol><li>Crie conta, envie o certificado A1 e gere as credenciais (client id/secret ou token).</li><li>Em Ajustes &gt; DZ23 NF-e, escolha "Nuvem Fiscal" e cole o token.</li></ol></field>
+        </record>
+        <record id="int_enotas" model="dz23.integration">
+            <field name="name">eNotas</field><field name="category">fiscal</field><field name="available" eval="False"/>
+            <field name="description">Emissão fiscal por API após credenciamento.</field>
+            <field name="official_url">https://app.enotasgw.com.br</field>
+            <field name="how_to" type="html"><ol><li>Crie conta na eNotas, faça o credenciamento fiscal e pegue a API key.</li><li>Cole no parâmetro de token do provedor de NF-e.</li></ol></field>
+        </record>
+        <record id="int_plugnotas" model="dz23.integration">
+            <field name="name">PlugNotas</field><field name="category">fiscal</field><field name="available" eval="False"/>
+            <field name="description">Emissão/consulta/cancelamento de NFS-e via API.</field>
+            <field name="official_url">https://app.plugnotas.com.br</field>
+            <field name="how_to" type="html"><ol><li>Crie conta, envie certificado A1 e pegue o X-API-KEY.</li><li>Cole no parâmetro de token do provedor de NF-e.</li></ol></field>
+        </record>
+        <record id="int_webmania" model="dz23.integration">
+            <field name="name">WebmaniaBR</field><field name="category">fiscal</field><field name="available" eval="False"/>
+            <field name="description">Emissão e consulta fiscal via conta própria.</field>
+            <field name="official_url">https://webmaniabr.com/painel</field>
+            <field name="how_to" type="html"><ol><li>No painel WebmaniaBR gere Consumer Key/Secret e Access Token/Secret.</li><li>Cole nas credenciais do provedor de NF-e.</li></ol></field>
+        </record>
+
+        <!-- ================= Marketplace ================= -->
+        <record id="int_woocommerce" model="dz23.integration">
+            <field name="name">WooCommerce</field><field name="category">marketplace</field><field name="available" eval="False"/>
+            <field name="description">Loja WooCommerce via conector OCA. Requer credenciais da loja.</field>
+            <field name="official_url">https://woocommerce.com</field>
+            <field name="how_to" type="html"><ol><li>No WooCommerce &gt; Ajustes &gt; Avançado &gt; REST API, gere Consumer Key/Secret.</li><li>Instale o conector OCA (connector-woocommerce) e configure o backend com a URL e as chaves.</li></ol></field>
+        </record>
+        <record id="int_mercadolivre" model="dz23.integration">
+            <field name="name">Mercado Livre</field><field name="category">marketplace</field><field name="available" eval="False"/>
+            <field name="description">Anúncios e pedidos. Requer integração de vendedor + desenvolvimento.</field>
+            <field name="official_url">https://developers.mercadolivre.com.br</field>
+            <field name="how_to" type="html"><ol><li>Crie uma aplicação no DevCenter do Mercado Livre (OAuth).</li><li>Requer conector sob medida (não há módulo grátis pronto).</li></ol></field>
+        </record>
+        <record id="int_tiktokshop" model="dz23.integration">
+            <field name="name">TikTok Shop</field><field name="category">marketplace</field><field name="available" eval="False"/>
+            <field name="description">Loja TikTok. Requer API de vendedor + aprovação + desenvolvimento.</field>
+            <field name="official_url">https://partner.tiktokshop.com</field>
+            <field name="how_to" type="html"><ol><li>Cadastre-se no TikTok Shop Partner Center e crie um app (aprovação necessária).</li><li>Requer conector sob medida (não há módulo grátis pronto).</li></ol></field>
+        </record>
+        <record id="int_amazon" model="dz23.integration">
+            <field name="name">Amazon</field><field name="category">marketplace</field><field name="available" eval="False"/>
+            <field name="description">Marketplace Amazon (SP-API). Requer conta de vendedor + desenvolvimento.</field>
+            <field name="official_url">https://sellercentral.amazon.com.br</field>
+            <field name="how_to" type="html"><ol><li>Registre-se no Amazon SP-API (Seller Central &gt; Develop Apps).</li><li>Requer conector sob medida (o conector oficial do Odoo é Enterprise/pago).</li></ol></field>
+        </record>
+    </data>
+</odoo>

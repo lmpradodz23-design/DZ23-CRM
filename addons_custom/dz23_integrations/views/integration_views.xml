@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="dz23_integration_view_kanban" model="ir.ui.view">
+        <field name="name">dz23.integration.kanban</field>
+        <field name="model">dz23.integration</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="category" class="o_kanban_dashboard">
+                <field name="status"/>
+                <field name="available"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex align-items-start p-2" style="gap:12px;">
+                            <field name="logo" widget="image" options="{'size': [56, 56]}"
+                                   class="rounded" alt="logo"/>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong><field name="name"/></strong>
+                                    <span t-if="record.status.raw_value == 'configured'"
+                                          class="badge text-bg-success">Conectado</span>
+                                    <span t-elif="!record.available.raw_value"
+                                          class="badge text-bg-warning">Requer credencial</span>
+                                    <span t-else="" class="badge text-bg-secondary">Desconectado</span>
+                                </div>
+                                <div class="text-muted small mt-1"><field name="description"/></div>
+                                <div class="mt-2">
+                                    <button name="action_configure" type="object"
+                                            class="btn btn-primary btn-sm">Configurar</button>
+                                    <a t-if="record.docs_url.raw_value"
+                                       t-att-href="record.docs_url.raw_value" target="_blank"
+                                       class="btn btn-link btn-sm">Docs</a>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="dz23_integration_view_form" model="ir.ui.view">
+        <field name="name">dz23.integration.form</field>
+        <field name="model">dz23.integration</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_configure" type="object" string="Configurar / Ativar API"
+                            class="btn-primary"/>
+                    <field name="status" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <field name="logo" widget="image" class="oe_avatar"/>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Integração"/></h1>
+                        <field name="category"/>
+                    </div>
+                    <group>
+                        <field name="description"/>
+                        <field name="official_url" widget="url" string="Painel oficial"/>
+                        <field name="docs_url" widget="url" string="Documentação"/>
+                    </group>
+                    <separator string="Como conectar (passo a passo)"/>
+                    <field name="how_to"/>
+                    <div class="alert alert-info" role="alert">
+                        As credenciais são guardadas com segurança no servidor
+                        (ir.config_parameter / Vault) e nunca ficam expostas no navegador.
+                        Clique em <b>Configurar / Ativar API</b> para inserir a chave em Ajustes.
+                    </div>
+                    <group string="Avançado" col="2">
+                        <field name="available"/>
+                        <field name="config_param"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="dz23_integration_action" model="ir.actions.act_window">
+        <field name="name">Integrações</field>
+        <field name="res_model">dz23.integration</field>
+        <field name="view_mode">kanban,form</field>
+    </record>
+
+    <menuitem id="dz23_integration_menu_root" name="Integrações"
+              web_icon="dz23_integrations,static/description/icon.png" sequence="90"/>
+    <menuitem id="dz23_integration_menu_main" name="Integrações"
+              parent="dz23_integration_menu_root" action="dz23_integration_action" sequence="10"/>
+</odoo>
