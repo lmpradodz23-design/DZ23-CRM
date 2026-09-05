@@ -1,15 +1,21 @@
 # Ambiente de DEV/TESTE do DZ23 CRM — Odoo 19 + PostgreSQL.
 # Sobe a imagem OFICIAL odoo:19 montando nossos módulos (addons_custom).
-# NÃO é produção: senhas de dev vêm do .env (fora do Git).
+# NÃO é produção. Segredos vêm do .env (fora do Git) — SEM defaults: se a
+# variável não estiver definida, o compose FALHA (fail-closed), nunca usa
+# uma senha conhecida. Portas expostas só em 127.0.0.1 (loopback) — o único
+# ingress de produção é um reverse proxy (ver docker-compose.prod.yml, à parte).
 services:
   db:
     image: postgres:16
     environment:
       POSTGRES_DB: postgres
-      POSTGRES_USER: ${POSTGRES_USER:-odoo}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odoo_dev}
+      POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
     volumes:
       - dz23-db:/var/lib/postgresql/data
+    # Sem portas publicadas: o Postgres só é acessível pela rede interna do compose.
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 
   odoo:
@@ -17,16 +23,24 @@ services:
     depends_on:
       - db
     ports:
-      - "8069:8069"
+      # Loopback apenas — nada exposto na rede externa em dev.
+      - "127.0.0.1:8069:8069"
     environment:
       HOST: db
-      USER: ${POSTGRES_USER:-odoo}
-      PASSWORD: ${POSTGRES_PASSWORD:-odoo_dev}
+      USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
+      PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    # admin_passwd (senha mestra) injetada do .env — nunca do placeholder do conf.
+    command: >
+      odoo
+      --config=/etc/odoo/odoo.conf
+      --admin-passwd=${ODOO_MASTER_PASSWORD:?defina ODOO_MASTER_PASSWORD no .env}
     volumes:
       - ../addons_custom:/mnt/extra-addons
       - ../addons_oca:/mnt/oca-addons
       - ./odoo.conf:/etc/odoo/odoo.conf
       - dz23-odoo:/var/lib/odoo
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 
 volumes:

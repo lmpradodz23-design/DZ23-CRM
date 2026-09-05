@@ -1,18 +1,25 @@
 # Stack Evolution API (WhatsApp não-oficial) para teste local do DZ23 CRM.
-# Sobe Evolution + Postgres + Redis. Chave de API é de DEV (local).
+# Sobe Evolution + Postgres + Redis. TODOS os segredos vêm do .env (sem
+# defaults: falta => compose falha, nunca usa credencial conhecida).
+# Porta 8080 só em 127.0.0.1 (loopback). Evolution fica em rede própria,
+# separada da rede do banco do Odoo.
 services:
   evo-db:
     image: postgres:16
     environment:
       POSTGRES_DB: evolution
-      POSTGRES_USER: evo
-      POSTGRES_PASSWORD: evo_dev
+      POSTGRES_USER: ${EVO_POSTGRES_USER:?defina EVO_POSTGRES_USER no .env}
+      POSTGRES_PASSWORD: ${EVO_POSTGRES_PASSWORD:?defina EVO_POSTGRES_PASSWORD no .env}
     volumes:
       - evo-db:/var/lib/postgresql/data
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 
   evo-redis:
     image: redis:7-alpine
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 
   evolution-api:
@@ -21,12 +28,12 @@ services:
       - evo-db
       - evo-redis
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
-      AUTHENTICATION_API_KEY: DZ23-EVO-LOCAL-8f3a21
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:?defina EVOLUTION_API_KEY no .env}
       DATABASE_ENABLED: "true"
       DATABASE_PROVIDER: postgresql
-      DATABASE_CONNECTION_URI: postgresql://evo:evo_dev@evo-db:5432/evolution?schema=public
+      DATABASE_CONNECTION_URI: postgresql://${EVO_POSTGRES_USER:?}:${EVO_POSTGRES_PASSWORD:?}@evo-db:5432/evolution?schema=public
       DATABASE_CONNECTION_CLIENT_NAME: evolution
       CACHE_REDIS_ENABLED: "true"
       CACHE_REDIS_URI: redis://evo-redis:6379/6
@@ -36,6 +43,8 @@ services:
       QRCODE_LIMIT: "30"
     volumes:
       - evo-instances:/evolution/instances
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 
 volumes:
