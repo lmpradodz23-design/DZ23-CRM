@@ -115,9 +115,14 @@ class DZ23ChannelAgent(models.Model):
     def _agent_system_prompt(self, lead):
         base = self.agent_prompt or _DEFAULT_PROMPT
         blocks = [base, self._agent_business_context()]
-        history = self._agent_history(lead)
-        if history:
-            blocks.append(_("Histórico recente da conversa:\n%s") % history)
+        # Histórico (chatter = notas internas) só vai para IA LOCAL (on-prem).
+        # Provedor externo NÃO recebe notas internas (privacidade/LGPD).
+        provider = (self.env["ir.config_parameter"].sudo()
+                    .get_param("dz23.ai_provider", "ollama") or "ollama")
+        if provider == "ollama":
+            history = self._agent_history(lead)
+            if history:
+                blocks.append(_("Histórico recente da conversa:\n%s") % history)
         return "\n\n".join(blocks)
 
     # ---- agenda: parsing DETERMINÍSTICO (não assume hora) -----------------

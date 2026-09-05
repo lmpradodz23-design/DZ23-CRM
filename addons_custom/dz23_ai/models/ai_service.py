@@ -7,6 +7,7 @@
 #   - anthropic: pago
 # Chaves/base ficam em ir.config_parameter (Ajustes), nunca no código.
 import logging
+import re
 
 import requests
 
@@ -21,6 +22,27 @@ _OPENAI_COMPAT_BASE = {
     "groq": "https://api.groq.com/openai/v1",
     "openai": "https://api.openai.com/v1",
 }
+_LOCAL_PROVIDERS = ("ollama",)
+
+# Redação de PII para o que sai a provedores EXTERNOS.
+_RE_EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
+_RE_PHONE = re.compile(r"\+?\d[\d\s().-]{7,}\d")
+_RE_DOC = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b|\b\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}\b")
+
+
+def _safe_url(url):
+    """URL sem query string (evita vazar chave/token em log)."""
+    return (url or "").split("?", 1)[0]
+
+
+def _redact_pii(text):
+    """Mascara e-mail, telefone e CPF/CNPJ antes de enviar a IA externa."""
+    if not text:
+        return text
+    text = _RE_EMAIL.sub("[email]", text)
+    text = _RE_DOC.sub("[documento]", text)
+    text = _RE_PHONE.sub("[telefone]", text)
+    return text
 
 
 class DZ23AI(models.AbstractModel):
@@ -45,21 +67,29 @@ class DZ23AI(models.AbstractModel):
             "anthropic": "claude-3-5-sonnet-latest",
         }.get(self._provider(), "llama3.2:3b")
 
+    def _external_allowed(self):
+        """Política: provedores externos só com consentimento explícito."""
+        val = self._cfg("dz23.ai.external_allowed", "0")
+        return (val or "0") not in ("0", "False", "false", "")
+
     def _post(self, url, **kwargs):
         try:
             resp = requests.post(url, timeout=_TIMEOUT, **kwargs)
-        except requests.exceptions.RequestException as e:
-            _logger.warning("DZ23 IA erro de rede (%s): %s", self._provider(), e)
+        except requests.exceptions.RequestException:
+            # NUNCA logar a exceção crua (pode conter URL com query/segredo).
+            _logger.warning("DZ23 IA erro de rede (%s) em %s",
+                            self._provider(), _safe_url(url))
             raise UserError(_("Não foi possível contatar a IA (%s).") % self._provider())
         if resp.status_code >= 400:
-            _logger.info("DZ23 IA %s -> %s", url, resp.status_code)
+            _logger.info("DZ23 IA %s -> %s", _safe_url(url), resp.status_code)
             raise UserError(_("A IA recusou a requisição (código %s).") % resp.status_code)
         return resp.json()
 
     # ---------- API pública ----------
     @api.model
     def chat(self, prompt, system=None, image_b64=None):
-        """Envia um prompt (opcionalmente com imagem) e retorna o texto."""
+        """Envia um prompt e retorna o texto. Local (Ollama) por padrão;
+        provedores externos exigem política explícita e recebem PII redigida."""
         if not prompt:
             raise UserError(_("Prompt vazio."))
         provider = self._provider()
@@ -72,6 +102,15 @@ class DZ23AI(models.AbstractModel):
         }.get(provider)
         if not fn:
             raise UserError(_("Provedor de IA não suportado: %s") % provider)
+        # GATE de privacidade: externo só com política; e redige PII antes de sair.
+        if provider not in _LOCAL_PROVIDERS:
+            if not self._external_allowed():
+                raise UserError(_(
+                    "Provedor de IA externo (%s) está desativado por política. "
+                    "Use o modelo local (Ollama) ou ative dz23.ai.external_allowed "
+                    "com consentimento/base legal registrados.") % provider)
+            prompt = _redact_pii(prompt)
+            system = _redact_pii(system)
         return fn(prompt, system, image_b64)
 
     # ---------- Adaptadores ----------
@@ -153,8 +192,8 @@ class DZ23AI(models.AbstractModel):
         payload = {"contents": [{"parts": parts}]}
         if system:
             payload["systemInstruction"] = {"parts": [{"text": system}]}
-        url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s" % (
-            self._model(), key,
-        )
-        data = self._post(url, json=payload)
+        # Chave no HEADER (x-goog-api-key), NUNCA na query string (evita log leak).
+        url = ("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent"
+               % self._model())
+        data = self._post(url, headers={"x-goog-api-key": key}, json=payload)
         return data["candidates"][0]["content"]["parts"][0]["text"]
