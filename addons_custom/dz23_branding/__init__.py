@@ -28,6 +28,10 @@ def post_init_hook(env):
         if root and root.name != "DZ23 Bot":
             root.sudo().write({"name": "DZ23 Bot"})
             _logger.info("DZ23 branding: bot do sistema renomeado para DZ23 Bot")
+        # Desliga o tour do robô (popup intrusivo + textos com "Odoo")
+        users = env["res.users"].with_context(active_test=False).search([])
+        if users and "odoobot_state" in env["res.users"]._fields:
+            users.write({"odoobot_state": "disabled"})
     except Exception as e:  # noqa: BLE001
         _logger.warning("DZ23 branding: falha no rename do bot: %s", e)
     try:
