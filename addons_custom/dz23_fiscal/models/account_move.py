@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-from odoo import api, fields, models
+from odoo import fields, models
 
 
 class AccountMove(models.Model):
@@ -24,7 +23,8 @@ class AccountMove(models.Model):
     # Disponibilidade real da emissão — falso até adapter homologado (ADR-002).
     # Controla a visibilidade do botão: nada de botão sem backend real.
     dz23_nfe_available = fields.Boolean(
-        string="NF-e disponível", compute="_compute_dz23_nfe_available")
+        string="NF-e disponível", compute="_compute_dz23_nfe_available"
+    )
 
     def _compute_dz23_nfe_available(self):
         enabled = self.env["dz23.fiscal"].is_enabled()

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # DZ23 CRM — Provedor de pagamento Woovi (PIX).
 # Fluxo: cria cobrança PIX via API Woovi, exibe QR Code/copia-e-cola e confirma
 # via webhook. Credenciais (AppID) ficam no registro do provider (servidor).

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from odoo import api, fields, models
 
 
@@ -27,8 +26,11 @@ class DZ23Integration(models.Model):
     config_param = fields.Char(help="Chave de ir.config_parameter que sinaliza 'configurado'.")
     docs_url = fields.Char("Documentação")
     official_url = fields.Char("Painel oficial", help="Onde criar a conta e pegar a API.")
-    how_to = fields.Html("Como conectar", sanitize=False,
-                         help="Passo a passo para obter e ativar a API desta integração.")
+    how_to = fields.Html(
+        "Como conectar",
+        sanitize=False,
+        help="Passo a passo para obter e ativar a API desta integração.",
+    )
     available = fields.Boolean(
         default=True,
         help="Desmarque para integrações que ainda dependem de credencial/homologação externa.",

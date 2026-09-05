@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # DZ23 CRM — Agente WhatsApp com IA: responde mensagens recebidas e agenda.
 # Recebe (Meta ou Evolution) -> IA responde -> envia de volta; se detectar
 # intenção de horário, cria evento na Agenda e confirma. Provedor-agnóstico.
@@ -10,7 +9,14 @@
     "website": "https://www.dz23.com.br",
     "license": "LGPL-3",
     "category": "Marketing",
-    "depends": ["dz23_whatsapp", "dz23_ai", "crm", "calendar", "phone_validation", "sale_management"],
+    "depends": [
+        "dz23_whatsapp",
+        "dz23_ai",
+        "crm",
+        "calendar",
+        "phone_validation",
+        "sale_management",
+    ],
     "data": [
         "data/config_params.xml",
         "views/res_config_settings_views.xml",

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Rebrand do PWA (manifest): nome, cores e ícones DZ23 CRM.
 # Estende o controller nativo web.WebManifest sem editar o core.
 from odoo.addons.web.controllers.webmanifest import WebManifest
@@ -7,7 +6,6 @@ DZ23_NAVY = "#003175"
 
 
 class DZ23WebManifest(WebManifest):
-
     def _get_webmanifest(self):
         manifest = super()._get_webmanifest()
         # Nome do app (também controlado por ir.config_parameter web.web_app_name)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Webhooks de entrada do WhatsApp (Meta Cloud + Evolution), MULTI-TENANT.
 # A URL carrega um token opaco que resolve O CANAL (e sua empresa). A auth é
 # POR CANAL (apikey/App Secret do canal), fail-closed: token desconhecido ou
@@ -35,10 +34,14 @@ def _read_body():
 
 
 class DZ23WhatsAppWebhook(http.Controller):
-
     # ---------------- Evolution (tokenizado, por canal) ----------------
-    @http.route("/dz23/whatsapp/evolution/webhook/<token>", type="http",
-                auth="public", methods=["POST"], csrf=False)
+    @http.route(
+        "/dz23/whatsapp/evolution/webhook/<token>",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        csrf=False,
+    )
     def evolution_webhook(self, token, **_kw):
         channel = request.env["dz23.channel"]._resolve_by_token(token)
         # FAIL-CLOSED: token desconhecido ou canal sem segredo de callback => recusa.
@@ -66,27 +69,39 @@ class DZ23WhatsAppWebhook(http.Controller):
             # processa depois. Nunca roda IA/negócio de forma síncrona aqui.
             mid = svc._extract_message_id("evolution", data)
             try:
-                request.env["dz23.message.inbox"].sudo()._enqueue(
-                    channel, mid, number, text, data)
+                request.env["dz23.message.inbox"].sudo()._enqueue(channel, mid, number, text, data)
             except Exception:  # noqa: BLE001 - webhook nunca estoura 500
                 _logger.exception("Falha ao enfileirar inbound Evolution canal=%s", channel.id)
         return request.make_response("ok")
 
     # ---------------- Meta Cloud (tokenizado, por canal) ----------------
-    @http.route("/dz23/whatsapp/meta/webhook/<token>", type="http",
-                auth="public", methods=["GET"], csrf=False)
+    @http.route(
+        "/dz23/whatsapp/meta/webhook/<token>",
+        type="http",
+        auth="public",
+        methods=["GET"],
+        csrf=False,
+    )
     def meta_verify(self, token, **kw):
         channel = request.env["dz23.channel"]._resolve_by_token(token)
         if not channel or channel.provider != "meta_cloud":
             return request.make_response("not found", status=404)
         verify = channel.meta_verify_token or ""
-        if (kw.get("hub.mode") == "subscribe" and verify
-                and _const_eq(kw.get("hub.verify_token"), verify)):
+        if (
+            kw.get("hub.mode") == "subscribe"
+            and verify
+            and _const_eq(kw.get("hub.verify_token"), verify)
+        ):
             return request.make_response(kw.get("hub.challenge", ""))
         return request.make_response("forbidden", status=403)
 
-    @http.route("/dz23/whatsapp/meta/webhook/<token>", type="http",
-                auth="public", methods=["POST"], csrf=False)
+    @http.route(
+        "/dz23/whatsapp/meta/webhook/<token>",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        csrf=False,
+    )
     def meta_webhook(self, token, **_kw):
         channel = request.env["dz23.channel"]._resolve_by_token(token)
         if not channel or channel.provider != "meta_cloud":
@@ -97,8 +112,9 @@ class DZ23WhatsAppWebhook(http.Controller):
         if len(raw) > _MAX_BODY:
             return request.make_response("payload too large", status=413)
         sig = request.httprequest.headers.get("X-Hub-Signature-256", "")
-        expected = "sha256=" + hmac.new(
-            channel.meta_app_secret.encode(), raw, hashlib.sha256).hexdigest()
+        expected = (
+            "sha256=" + hmac.new(channel.meta_app_secret.encode(), raw, hashlib.sha256).hexdigest()
+        )
         if not (sig.startswith("sha256=") and hmac.compare_digest(expected, sig)):
             _logger.warning("Meta webhook REJEITADO (assinatura) canal=%s", channel.id)
             return request.make_response("unauthorized", status=401)
@@ -113,8 +129,7 @@ class DZ23WhatsAppWebhook(http.Controller):
         if number and text:
             mid = svc._extract_message_id("meta_cloud", data)
             try:
-                request.env["dz23.message.inbox"].sudo()._enqueue(
-                    channel, mid, number, text, data)
+                request.env["dz23.message.inbox"].sudo()._enqueue(channel, mid, number, text, data)
             except Exception:  # noqa: BLE001
                 _logger.exception("Falha ao enfileirar inbound Meta canal=%s", channel.id)
         return request.make_response("ok")

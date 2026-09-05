@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Cérebro do atendente/vendedor, agora POR CANAL e no ESCOPO da empresa do canal
 # (multi-tenant). Estende dz23.channel e sobrescreve handle_inbound:
 #   - agenda (cria evento -> Google Calendar),
@@ -10,9 +9,8 @@ import re
 from datetime import timedelta
 
 from odoo import fields, models
-from odoo.tools.translate import _
-
 from odoo.addons.dz23_whatsapp.models.whatsapp_channel import _digits, _e164_br
+from odoo.tools.translate import _
 
 _logger = logging.getLogger(__name__)
 
@@ -36,7 +34,8 @@ _PRICE_RE = re.compile(r"pre[çc]o|valor|quanto\s+custa|quanto\s+[ée]|tabela", 
 _BUY_RE = re.compile(
     r"quero\s+comprar|vou\s+(?:comprar|levar|querer)|pode\s+fechar|fecha[r]?\b|"
     r"confirm|fazer\s+o\s+pedido|quero\s+fechar|bora\s+fechar|adquirir|contratar",
-    re.IGNORECASE)
+    re.IGNORECASE,
+)
 # Palavras de hora explícita (para não assumir 09:00 silenciosamente).
 _TIME_RE = re.compile(r"\b(\d{1,2})(?:[:hHed]\s?(\d{2}))?\s*(?:h|hs|horas?|:00)?\b")
 
@@ -48,6 +47,7 @@ def _strip_html(v):
 def _norm(s):
     """Normaliza acentos/caixa para casamento robusto de produtos."""
     import unicodedata
+
     s = unicodedata.normalize("NFKD", (s or "").lower())
     return "".join(c for c in s if not unicodedata.combining(c))
 
@@ -64,24 +64,28 @@ class DZ23ChannelAgent(models.Model):
         contact = self.env["dz23.channel.contact"]._get_or_create(self, e164, e164)
         if contact.lead_id:
             return contact.lead_id
-        lead = self.env["crm.lead"].create({
-            "name": _("WhatsApp %s") % number,
-            "phone": e164 or number,
-            "type": "lead",
-            "company_id": company.id,
-            "partner_id": contact.partner_id.id if contact.partner_id else False,
-        })
+        lead = self.env["crm.lead"].create(
+            {
+                "name": _("WhatsApp %s") % number,
+                "phone": e164 or number,
+                "type": "lead",
+                "company_id": company.id,
+                "partner_id": contact.partner_id.id if contact.partner_id else False,
+            }
+        )
         contact.lead_id = lead.id
         return lead
 
     def _agent_partner_for(self, lead):
         if lead.partner_id:
             return lead.partner_id
-        partner = self.env["res.partner"].create({
-            "name": lead.contact_name or lead.name or _("Cliente WhatsApp"),
-            "phone": lead.phone or "",
-            "company_id": self.company_id.id,
-        })
+        partner = self.env["res.partner"].create(
+            {
+                "name": lead.contact_name or lead.name or _("Cliente WhatsApp"),
+                "phone": lead.phone or "",
+                "company_id": self.company_id.id,
+            }
+        )
         lead.partner_id = partner.id
         return partner
 
@@ -89,7 +93,9 @@ class DZ23ChannelAgent(models.Model):
     def _agent_catalog(self, limit=40):
         return self.env["product.template"].search(
             [("sale_ok", "=", True), ("company_id", "in", (False, self.company_id.id))],
-            order="list_price desc", limit=limit)
+            order="list_price desc",
+            limit=limit,
+        )
 
     def _agent_business_context(self):
         company = self.company_id
@@ -97,18 +103,21 @@ class DZ23ChannelAgent(models.Model):
         currency = company.currency_id.symbol or "R$"
         prods = self._agent_catalog()
         if prods:
-            cat = [u"- %s: %s %.2f" % (p.name, currency, p.list_price or 0.0) for p in prods]
+            cat = ["- %s: %s %.2f" % (p.name, currency, p.list_price or 0.0) for p in prods]
             parts.append(_("Catálogo de produtos/serviços à venda:\n%s") % "\n".join(cat))
         else:
-            parts.append(_(
-                "Ainda não há produtos cadastrados; faça o atendimento, entenda a "
-                "necessidade do cliente e colete os dados do interesse."))
+            parts.append(
+                _(
+                    "Ainda não há produtos cadastrados; faça o atendimento, entenda a "
+                    "necessidade do cliente e colete os dados do interesse."
+                )
+            )
         return "\n".join(parts)
 
     def _agent_history(self, lead, limit=6):
         msgs = self.env["mail.message"].search(
-            [("model", "=", lead._name), ("res_id", "=", lead.id)],
-            order="id desc", limit=limit)
+            [("model", "=", lead._name), ("res_id", "=", lead.id)], order="id desc", limit=limit
+        )
         hist = [b for b in (_strip_html(m.body) for m in reversed(msgs)) if b]
         return "\n".join(hist[-limit:])
 
@@ -117,8 +126,10 @@ class DZ23ChannelAgent(models.Model):
         blocks = [base, self._agent_business_context()]
         # Histórico (chatter = notas internas) só vai para IA LOCAL (on-prem).
         # Provedor externo NÃO recebe notas internas (privacidade/LGPD).
-        provider = (self.env["ir.config_parameter"].sudo()
-                    .get_param("dz23.ai_provider", "ollama") or "ollama")
+        provider = (
+            self.env["ir.config_parameter"].sudo().get_param("dz23.ai_provider", "ollama")
+            or "ollama"
+        )
         if provider == "ollama":
             history = self._agent_history(lead)
             if history:
@@ -128,6 +139,7 @@ class DZ23ChannelAgent(models.Model):
     # ---- agenda: parsing DETERMINÍSTICO (não assume hora) -----------------
     def _agent_company_tz(self):
         import pytz
+
         name = self.company_id.partner_id.tz or self.env.user.tz or "America/Sao_Paulo"
         try:
             return pytz.timezone(name)
@@ -140,7 +152,9 @@ class DZ23ChannelAgent(models.Model):
         m = re.search(r"\b(\d{1,2})[:h](\d{2})\b", text or "")
         if m:
             return int(m.group(1)), int(m.group(2))
-        m = re.search(r"\b(\d{1,2})\s*h\b", text or "") or re.search(r"[àa]s\s*(\d{1,2})\b", text or "")
+        m = re.search(r"\b(\d{1,2})\s*h\b", text or "") or re.search(
+            r"[àa]s\s*(\d{1,2})\b", text or ""
+        )
         if m:
             return int(m.group(1)), 0
         return None
@@ -148,6 +162,7 @@ class DZ23ChannelAgent(models.Model):
     def _agent_parse_when(self, text):
         """Retorna dict: has_date, valid, date, time(ou None). Nunca assume 09:00."""
         import datetime as dt
+
         today = fields.Date.context_today(self)
         t = _norm(text)
         date = None
@@ -169,20 +184,26 @@ class DZ23ChannelAgent(models.Model):
             date = today
         if not date:
             return {"has_date": False}
-        return {"has_date": True, "valid": True, "date": date,
-                "time": self._parse_time_tuple(text)}
+        return {"has_date": True, "valid": True, "date": date, "time": self._parse_time_tuple(text)}
 
     def _agent_slot_conflict(self, start_utc, minutes=60):
         """True se já existe evento sobrepondo o intervalo (evita double-booking)."""
         stop = start_utc + timedelta(minutes=minutes)
-        return bool(self.env["calendar.event"].search([
-            ("start", "<", fields.Datetime.to_string(stop)),
-            ("stop", ">", fields.Datetime.to_string(start_utc)),
-        ], limit=1))
+        return bool(
+            self.env["calendar.event"].search(
+                [
+                    ("start", "<", fields.Datetime.to_string(stop)),
+                    ("stop", ">", fields.Datetime.to_string(start_utc)),
+                ],
+                limit=1,
+            )
+        )
 
     def _agent_local_to_utc(self, date, hour, minute):
         import datetime as dt
+
         import pytz
+
         aware = self._agent_company_tz().localize(dt.datetime.combine(date, dt.time(hour, minute)))
         return aware.astimezone(pytz.utc).replace(tzinfo=None), aware
 
@@ -204,25 +225,30 @@ class DZ23ChannelAgent(models.Model):
 
     # ---- ações (na empresa do canal) -------------------------------------
     def _agent_create_event(self, lead, start_utc):
-        self.env["calendar.event"].create({
-            "name": _("Agendamento WhatsApp — %s") % (lead.contact_name or lead.name),
-            "start": fields.Datetime.to_string(start_utc),
-            "stop": fields.Datetime.to_string(start_utc + timedelta(hours=1)),
-            "partner_ids": [(4, lead.partner_id.id)] if lead.partner_id else [],
-            "opportunity_id": lead.id if lead._name == "crm.lead" else False,
-        })
+        self.env["calendar.event"].create(
+            {
+                "name": _("Agendamento WhatsApp — %s") % (lead.contact_name or lead.name),
+                "start": fields.Datetime.to_string(start_utc),
+                "stop": fields.Datetime.to_string(start_utc + timedelta(hours=1)),
+                "partner_ids": [(4, lead.partner_id.id)] if lead.partner_id else [],
+                "opportunity_id": lead.id if lead._name == "crm.lead" else False,
+            }
+        )
 
     def _agent_create_quote(self, lead, product):
         if "sale.order" not in self.env or not product.sale_ok:
             return False
         partner = self._agent_partner_for(lead)
-        so = self.env["sale.order"].create({
-            "partner_id": partner.id,
-            "company_id": self.company_id.id,
-            "origin": "WhatsApp DZ23",
-            "order_line": [(0, 0, {"product_id": product.product_variant_id.id,
-                                   "product_uom_qty": 1.0})],
-        })
+        so = self.env["sale.order"].create(
+            {
+                "partner_id": partner.id,
+                "company_id": self.company_id.id,
+                "origin": "WhatsApp DZ23",
+                "order_line": [
+                    (0, 0, {"product_id": product.product_variant_id.id, "product_uom_qty": 1.0})
+                ],
+            }
+        )
         lead.message_post(body=_("🛒 Orçamento %s aberto: %s") % (so.name, product.name))
         return so
 
@@ -256,15 +282,20 @@ class DZ23ChannelAgent(models.Model):
             reply = self._handle_price(lead, txt)
         # 4) Conversa geral via IA.
         else:
-            reply = self._agent_reply_ai(lead, txt, _(
-                "Oi! Já vi sua mensagem 😊 Me conta o que você precisa que eu te ajudo."))
+            reply = self._agent_reply_ai(
+                lead,
+                txt,
+                _("Oi! Já vi sua mensagem 😊 Me conta o que você precisa que eu te ajudo."),
+            )
 
         try:
             self.send_text(number, reply)
             lead.message_post(body=_("🤖 Resposta enviada: %s") % reply)
         except Exception as e:  # noqa: BLE001 - envio pode falhar sem provedor
-            lead.message_post(body=_("⚠️ Resposta gerada mas não enviada agora (%s): %s")
-                              % (type(e).__name__, reply))
+            lead.message_post(
+                body=_("⚠️ Resposta gerada mas não enviada agora (%s): %s")
+                % (type(e).__name__, reply)
+            )
         return True
 
     def _handle_schedule(self, lead, txt):
@@ -275,7 +306,8 @@ class DZ23ChannelAgent(models.Model):
             return _("Não consegui entender essa data. Pode confirmar o dia (ex.: 15/09)?")
         if not w.get("time"):
             return _("Perfeito, dia %s! Qual horário fica melhor pra você?") % (
-                w["date"].strftime("%d/%m"))
+                w["date"].strftime("%d/%m")
+            )
         hour, minute = w["time"]
         try:
             start_utc, aware = self._agent_local_to_utc(w["date"], hour, minute)
@@ -286,10 +318,13 @@ class DZ23ChannelAgent(models.Model):
         if self._agent_slot_conflict(start_utc):
             return _("Esse horário já está reservado 🙈 Quer tentar outro horário?")
         self._agent_create_event(lead, start_utc)
-        lead.message_post(body=_("📅 Evento criado para %s (sincroniza com Google Calendar)")
-                          % aware.strftime("%d/%m/%Y %H:%M"))
+        lead.message_post(
+            body=_("📅 Evento criado para %s (sincroniza com Google Calendar)")
+            % aware.strftime("%d/%m/%Y %H:%M")
+        )
         return _("Prontinho! Agendei para %s. Se precisar remarcar, é só falar 💙") % (
-            aware.strftime("%d/%m/%Y às %H:%M"))
+            aware.strftime("%d/%m/%Y às %H:%M")
+        )
 
     def _handle_buy(self, lead, txt):
         matches = self._agent_match_products(txt)
@@ -297,25 +332,32 @@ class DZ23ChannelAgent(models.Model):
             p = matches[0]
             so = self._agent_create_quote(lead, p)
             if so:
-                return _("Boa escolha! Registrei seu pedido de %s (%s %.2f). "
-                         "Posso seguir com a confirmação? 💙") % (
-                    p.name, self._cur(), p.list_price or 0.0)
+                return _(
+                    "Boa escolha! Registrei seu pedido de %s (%s %.2f). "
+                    "Posso seguir com a confirmação? 💙"
+                ) % (p.name, self._cur(), p.list_price or 0.0)
             return _("Consigo te ajudar com %s — me confirma que já registro.") % p.name
         if len(matches) > 1:
             nomes = ", ".join(m.name for m in matches[:5])
             return _("Temos algumas opções: %s. Qual delas você quer? 😊") % nomes
-        return self._agent_reply_ai(lead, txt, _(
-            "Me diz qual produto ou serviço você quer que eu já organizo pra você."))
+        return self._agent_reply_ai(
+            lead, txt, _("Me diz qual produto ou serviço você quer que eu já organizo pra você.")
+        )
 
     def _handle_price(self, lead, txt):
         matches = self._agent_match_products(txt)
         if len(matches) == 1:
             p = matches[0]
             return _("O %s fica %s %.2f. Quer que eu já reserve pra você? 😊") % (
-                p.name, self._cur(), p.list_price or 0.0)
+                p.name,
+                self._cur(),
+                p.list_price or 0.0,
+            )
         if len(matches) > 1:
-            nomes = ", ".join("%s (%s %.2f)" % (m.name, self._cur(), m.list_price or 0.0)
-                              for m in matches[:5])
+            nomes = ", ".join(
+                "%s (%s %.2f)" % (m.name, self._cur(), m.list_price or 0.0) for m in matches[:5]
+            )
             return _("Temos: %s. Sobre qual quer saber? ") % nomes
-        return self._agent_reply_ai(lead, txt, _(
-            "Me diz qual item você quer saber o preço que eu te falo certinho."))
+        return self._agent_reply_ai(
+            lead, txt, _("Me diz qual item você quer saber o preço que eu te falo certinho.")
+        )

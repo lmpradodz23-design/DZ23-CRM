@@ -13,7 +13,8 @@ extend-exclude = [
 # Conjuntos pragmáticos: erros/pyflakes/bugbear/imports/comprehensions/upgrade.
 select = ["E", "F", "W", "B", "I", "C4", "UP"]
 ignore = [
-    "E501",  # comprimento de linha tratado pelo line-length + format
+    "E501",   # comprimento de linha tratado pelo line-length + format
+    "UP031",  # %-format é intencional nas strings de tradução _() do Odoo (i18n)
 ]
 
 [lint.per-file-ignores]

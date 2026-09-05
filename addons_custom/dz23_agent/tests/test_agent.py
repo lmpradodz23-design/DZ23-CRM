@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Agente determinístico (HIGH-04): agenda não assume hora, rejeita passado,
 # evita double-booking; venda distingue preço de compra, exige produto não
 # ambíguo, casa com acentos. LLM não cria evento/pedido diretamente.
@@ -9,32 +8,41 @@ from odoo.tests import TransactionCase, tagged
 class TestAgentDeterministic(TransactionCase):
     def setUp(self):
         super().setUp()
-        self.channel = self.env["dz23.channel"].create({
-            "name": "Canal Agente", "company_id": self.env.company.id,
-            "provider": "evolution", "evo_base": "http://x.local:8080",
-            "evo_instance": "agente_inst", "evo_apikey": "K",
-        })
+        self.channel = self.env["dz23.channel"].create(
+            {
+                "name": "Canal Agente",
+                "company_id": self.env.company.id,
+                "provider": "evolution",
+                "evo_base": "http://x.local:8080",
+                "evo_instance": "agente_inst",
+                "evo_apikey": "K",
+            }
+        )
         P = self.env["product.template"]
         # nomes únicos (o banco compartilhado pode ter produtos de mesmo nome)
-        self.corte = P.create({"name": "Servico Alfa QA1", "type": "service",
-                               "list_price": 50.0, "sale_ok": True})
-        self.manut = P.create({"name": "Manutenção Zeta QA1", "type": "service",
-                               "list_price": 90.0, "sale_ok": True})
+        self.corte = P.create(
+            {"name": "Servico Alfa QA1", "type": "service", "list_price": 50.0, "sale_ok": True}
+        )
+        self.manut = P.create(
+            {"name": "Manutenção Zeta QA1", "type": "service", "list_price": 90.0, "sale_ok": True}
+        )
         # dois produtos para ambiguidade
-        self.masc = P.create({"name": "Combo Delta QA1", "type": "service",
-                              "list_price": 30.0, "sale_ok": True})
-        self.fem = P.create({"name": "Combo Epsilon QA1", "type": "service",
-                             "list_price": 40.0, "sale_ok": True})
+        self.masc = P.create(
+            {"name": "Combo Delta QA1", "type": "service", "list_price": 30.0, "sale_ok": True}
+        )
+        self.fem = P.create(
+            {"name": "Combo Epsilon QA1", "type": "service", "list_price": 40.0, "sale_ok": True}
+        )
         self.lead = self.channel._agent_find_lead("5561900000001")
         self.orders0 = self._orders_total()
 
     def _events(self):
-        return self.env["calendar.event"].search_count(
-            [("opportunity_id", "=", self.lead.id)])
+        return self.env["calendar.event"].search_count([("opportunity_id", "=", self.lead.id)])
 
     def _orders_total(self):
         return self.env["sale.order"].search_count(
-            [("origin", "=", "WhatsApp DZ23"), ("company_id", "=", self.env.company.id)])
+            [("origin", "=", "WhatsApp DZ23"), ("company_id", "=", self.env.company.id)]
+        )
 
     def _orders(self):
         # DELTA desde o setUp (o banco compartilhado pode ter pedidos antigos).
@@ -85,7 +93,8 @@ class TestAgentDeterministic(TransactionCase):
 
     def test_buy_ambiguous_asks_no_order(self):
         r = self.channel._handle_buy(
-            self.lead, "quero comprar Combo Delta QA1 ou Combo Epsilon QA1")
+            self.lead, "quero comprar Combo Delta QA1 ou Combo Epsilon QA1"
+        )
         self.assertEqual(self._orders(), 0)
         self.assertTrue("qual" in r.lower() or "opç" in r.lower() or "opc" in r.lower())
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # DZ23 CRM — integrações gratuitas Brasil (BrasilAPI/OSM): autofill CNPJ/CEP,
 # enriquecimento de lead, feriados, câmbio e botão WhatsApp (wa.me).
 {

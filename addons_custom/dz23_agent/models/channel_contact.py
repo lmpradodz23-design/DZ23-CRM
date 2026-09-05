@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Adiciona o vínculo com crm.lead à identidade de canal (dz23.channel.contact).
 # Fica aqui (dz23_agent depende de crm) e não no dz23_whatsapp base.
 from odoo import fields, models

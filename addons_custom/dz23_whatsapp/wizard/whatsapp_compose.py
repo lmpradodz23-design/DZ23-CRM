@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from odoo import fields, models
 from odoo.tools.translate import _
 
@@ -20,5 +19,7 @@ class DZ23WhatsAppCompose(models.TransientModel):
         if self.res_model and self.res_id and self.res_model in self.env.registry:
             rec = self.env[self.res_model].browse(self.res_id)
             if rec.exists() and hasattr(rec, "message_post"):
-                rec.message_post(body=_("WhatsApp enviado para %s:<br/>%s") % (self.number, self.body))
+                rec.message_post(
+                    body=_("WhatsApp enviado para %s:<br/>%s") % (self.number, self.body)
+                )
         return {"type": "ir.actions.act_window_close"}

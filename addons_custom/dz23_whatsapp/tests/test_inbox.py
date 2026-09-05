@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Inbox durável: dedupe (idempotência), exatamente-um-efeito, retry/backoff e DLQ.
 from unittest.mock import patch
 
@@ -10,17 +9,26 @@ from odoo.tests import TransactionCase, tagged
 class TestMessageInbox(TransactionCase):
     def setUp(self):
         super().setUp()
-        self.channel = self.env["dz23.channel"].create({
-            "name": "Canal Inbox", "company_id": self.env.company.id,
-            "provider": "evolution", "evo_base": "http://nao-existe.local:8080",
-            "evo_instance": "inbox_inst", "evo_apikey": "K",
-        })
+        self.channel = self.env["dz23.channel"].create(
+            {
+                "name": "Canal Inbox",
+                "company_id": self.env.company.id,
+                "provider": "evolution",
+                "evo_base": "http://nao-existe.local:8080",
+                "evo_instance": "inbox_inst",
+                "evo_apikey": "K",
+            }
+        )
         self.Inbox = self.env["dz23.message.inbox"]
 
     def _payload(self, mid, num, text):
-        return {"instance": "inbox_inst",
-                "data": {"key": {"id": mid, "remoteJid": "%s@s.whatsapp.net" % num},
-                         "message": {"conversation": text}}}
+        return {
+            "instance": "inbox_inst",
+            "data": {
+                "key": {"id": mid, "remoteJid": "%s@s.whatsapp.net" % num},
+                "message": {"conversation": text},
+            },
+        }
 
     def test_enqueue_dedupe_sequential(self):
         p = self._payload("MID1", "5561911112222", "oi")
@@ -33,7 +41,9 @@ class TestMessageInbox(TransactionCase):
 
     def test_exactly_one_effect_on_reprocess(self):
         p = self._payload("MID2", "5561933334444", "quero agendar 20/09 as 14:00")
-        self.Inbox._enqueue(self.channel, "MID2", "5561933334444", "quero agendar 20/09 as 14:00", p)
+        self.Inbox._enqueue(
+            self.channel, "MID2", "5561933334444", "quero agendar 20/09 as 14:00", p
+        )
         self.Inbox._cron_process()
         rec = self.Inbox.search([("message_id", "=", "MID2")])
         self.assertEqual(rec.status, "done")
@@ -48,8 +58,10 @@ class TestMessageInbox(TransactionCase):
         p = self._payload("MID3", "5561955556666", "oi")
         rec, _c = self.Inbox._enqueue(self.channel, "MID3", "5561955556666", "oi", p)
         rec.max_attempts = 2
-        with patch("odoo.addons.dz23_agent.models.whatsapp_agent."
-                   "DZ23ChannelAgent.handle_inbound", side_effect=Exception("boom")):
+        with patch(
+            "odoo.addons.dz23_agent.models.whatsapp_agent.DZ23ChannelAgent.handle_inbound",
+            side_effect=Exception("boom"),
+        ):
             rec._process_one()
             self.assertEqual(rec.status, "failed")
             self.assertEqual(rec.attempts, 1)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Camada de serviço para APIs públicas gratuitas do Brasil.
 # Fonte padrão: BrasilAPI (https://brasilapi.com.br). Sem chave/segredo.
 # Todas as chamadas têm timeout curto e tratamento de erro (nunca quebra o form).
@@ -6,7 +5,6 @@ import logging
 import re
 
 import requests
-
 from odoo import api, models
 from odoo.exceptions import UserError
 from odoo.tools.translate import _
@@ -36,19 +34,23 @@ class DZ23BrasilApi(models.AbstractModel):
         try:
             resp = requests.get(url, timeout=_TIMEOUT, headers={"Accept": "application/json"})
         except requests.exceptions.Timeout:
-            raise UserError(_("A consulta demorou demais (timeout). Tente novamente."))
+            raise UserError(_("A consulta demorou demais (timeout). Tente novamente.")) from None
         except requests.exceptions.RequestException as e:
             _logger.warning("DZ23 BrasilAPI erro de rede: %s", e)
-            raise UserError(_("Não foi possível consultar a API agora. Verifique a conexão."))
+            raise UserError(
+                _("Não foi possível consultar a API agora. Verifique a conexão.")
+            ) from None
         if resp.status_code == 404:
             return None
         if resp.status_code >= 400:
             _logger.info("DZ23 BrasilAPI status %s para %s", resp.status_code, url)
-            raise UserError(_("Consulta não encontrada ou inválida (código %s).") % resp.status_code)
+            raise UserError(
+                _("Consulta não encontrada ou inválida (código %s).") % resp.status_code
+            )
         try:
             return resp.json()
         except ValueError:
-            raise UserError(_("Resposta inválida da API."))
+            raise UserError(_("Resposta inválida da API.")) from None
 
     # ---- CEP -> endereço ----
     @api.model
@@ -97,8 +99,8 @@ class DZ23BrasilApi(models.AbstractModel):
             "porte": data.get("porte") or "",
             "cnae": cnae,
             "natureza": data.get("natureza_juridica") or "",
-            "simples": bool((data.get("opcao_pelo_simples") or False)),
-            "mei": bool((data.get("opcao_pelo_mei") or False)),
+            "simples": bool(data.get("opcao_pelo_simples") or False),
+            "mei": bool(data.get("opcao_pelo_mei") or False),
         }
 
     # ---- Feriados nacionais (para automações/agenda) ----

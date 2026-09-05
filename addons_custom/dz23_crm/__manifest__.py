@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # DZ23 CRM — ajustes de CRM (ex.: botão WhatsApp no lead). Enxuto e seguro.
 {
     "name": "DZ23 CRM — CRM",

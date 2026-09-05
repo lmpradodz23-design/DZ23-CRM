@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Webhook Woovi: confirma o pagamento PIX.
 # SEGURANÇA (fail-closed): só processa se a assinatura RSA do corpo for válida
 # contra a chave pública da Woovi (ir.config_parameter dz23.woovi.webhook_pubkey).
@@ -22,6 +21,7 @@ def _verify_woovi_signature(raw_body, signature_b64, pubkey_pem):
     try:
         from cryptography.hazmat.primitives import hashes, serialization
         from cryptography.hazmat.primitives.asymmetric import padding
+
         public_key = serialization.load_pem_public_key(pubkey_pem.encode())
         public_key.verify(
             base64.b64decode(signature_b64),
@@ -35,9 +35,7 @@ def _verify_woovi_signature(raw_body, signature_b64, pubkey_pem):
 
 
 class WooviController(http.Controller):
-
-    @http.route("/payment/woovi/webhook", type="http", auth="public",
-                methods=["POST"], csrf=False)
+    @http.route("/payment/woovi/webhook", type="http", auth="public", methods=["POST"], csrf=False)
     def woovi_webhook(self, **_kwargs):
         raw = request.httprequest.get_data() or b""
         signature = request.httprequest.headers.get("x-webhook-signature", "")
@@ -51,7 +49,9 @@ class WooviController(http.Controller):
         data = request.get_json_data()
         charge = (data or {}).get("charge") or {}
         correlation = charge.get("correlationID")
-        _logger.info("Woovi webhook OK: correlationID=%s status=%s", correlation, charge.get("status"))
+        _logger.info(
+            "Woovi webhook OK: correlationID=%s status=%s", correlation, charge.get("status")
+        )
         if correlation:
             tx_sudo = request.env["payment.transaction"].sudo()._search_by_reference("woovi", data)
             if tx_sudo:

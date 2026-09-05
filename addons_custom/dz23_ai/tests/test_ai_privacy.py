@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
 # Privacidade da IA (MEDIUM-02/03): externo negado por padrão; PII redigida
 # antes de sair; chave Gemini fora da URL; logger não vaza query string.
+from odoo.addons.dz23_ai.models.ai_service import _redact_pii, _safe_url
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
-
-from odoo.addons.dz23_ai.models.ai_service import _redact_pii, _safe_url
 
 
 @tagged("post_install", "-at_install", "dz23")
@@ -48,5 +46,5 @@ class TestAIPrivacy(TransactionCase):
 
     def test_safe_url_strips_query(self):
         self.assertEqual(
-            _safe_url("https://api.x.com/v1/gen?key=SEGREDO123&x=1"),
-            "https://api.x.com/v1/gen")
+            _safe_url("https://api.x.com/v1/gen?key=SEGREDO123&x=1"), "https://api.x.com/v1/gen"
+        )

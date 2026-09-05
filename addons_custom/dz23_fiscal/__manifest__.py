@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # DZ23 CRM — Fiscal (NF-e) via provedor de terceiros.
 # Módulo OPCIONAL (não faz parte do MVP CRM enxuto): instala a estrutura para
 # emitir NF-e chamando a API de um provedor (Focus NFe / NFe.io / Nuvem Fiscal).

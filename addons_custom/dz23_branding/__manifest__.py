@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # DZ23 CRM — módulo de rebrand/debrand sobre Odoo 19 Community (LGPLv3).
 # Este módulo NÃO edita o core do Odoo: ele herda/sobrescreve templates e
 # registros para trocar a marca "Odoo" pela marca "DZ23 CRM".

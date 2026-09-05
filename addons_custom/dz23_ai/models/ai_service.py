@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Serviço de IA plugável. Provedores:
 #   - ollama  : LOCAL e GRÁTIS (sem custo de token) — http://host:11434
 #   - groq    : free-tier (OpenAI-compatible)
@@ -10,7 +9,6 @@ import logging
 import re
 
 import requests
-
 from odoo import api, models
 from odoo.exceptions import UserError
 from odoo.tools.translate import _
@@ -77,9 +75,8 @@ class DZ23AI(models.AbstractModel):
             resp = requests.post(url, timeout=_TIMEOUT, **kwargs)
         except requests.exceptions.RequestException:
             # NUNCA logar a exceção crua (pode conter URL com query/segredo).
-            _logger.warning("DZ23 IA erro de rede (%s) em %s",
-                            self._provider(), _safe_url(url))
-            raise UserError(_("Não foi possível contatar a IA (%s).") % self._provider())
+            _logger.warning("DZ23 IA erro de rede (%s) em %s", self._provider(), _safe_url(url))
+            raise UserError(_("Não foi possível contatar a IA (%s).") % self._provider()) from None
         if resp.status_code >= 400:
             _logger.info("DZ23 IA %s -> %s", _safe_url(url), resp.status_code)
             raise UserError(_("A IA recusou a requisição (código %s).") % resp.status_code)
@@ -105,10 +102,14 @@ class DZ23AI(models.AbstractModel):
         # GATE de privacidade: externo só com política; e redige PII antes de sair.
         if provider not in _LOCAL_PROVIDERS:
             if not self._external_allowed():
-                raise UserError(_(
-                    "Provedor de IA externo (%s) está desativado por política. "
-                    "Use o modelo local (Ollama) ou ative dz23.ai.external_allowed "
-                    "com consentimento/base legal registrados.") % provider)
+                raise UserError(
+                    _(
+                        "Provedor de IA externo (%s) está desativado por política. "
+                        "Use o modelo local (Ollama) ou ative dz23.ai.external_allowed "
+                        "com consentimento/base legal registrados."
+                    )
+                    % provider
+                )
             prompt = _redact_pii(prompt)
             system = _redact_pii(system)
         return fn(prompt, system, image_b64)
@@ -146,8 +147,7 @@ class DZ23AI(models.AbstractModel):
         if image_b64:
             content = [
                 {"type": "text", "text": prompt},
-                {"type": "image_url",
-                 "image_url": {"url": "data:image/png;base64,%s" % image_b64}},
+                {"type": "image_url", "image_url": {"url": "data:image/png;base64,%s" % image_b64}},
             ]
         else:
             content = prompt
@@ -167,12 +167,17 @@ class DZ23AI(models.AbstractModel):
             raise UserError(_("Configure a chave de API da Anthropic em Ajustes."))
         content = [{"type": "text", "text": prompt}]
         if image_b64:
-            content.append({
-                "type": "image",
-                "source": {"type": "base64", "media_type": "image/png", "data": image_b64},
-            })
-        payload = {"model": self._model(), "max_tokens": 1024,
-                   "messages": [{"role": "user", "content": content}]}
+            content.append(
+                {
+                    "type": "image",
+                    "source": {"type": "base64", "media_type": "image/png", "data": image_b64},
+                }
+            )
+        payload = {
+            "model": self._model(),
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": content}],
+        }
         if system:
             payload["system"] = system
         data = self._post(
@@ -193,7 +198,9 @@ class DZ23AI(models.AbstractModel):
         if system:
             payload["systemInstruction"] = {"parts": [{"text": system}]}
         # Chave no HEADER (x-goog-api-key), NUNCA na query string (evita log leak).
-        url = ("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent"
-               % self._model())
+        url = (
+            "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent"
+            % self._model()
+        )
         data = self._post(url, headers={"x-goog-api-key": key}, json=payload)
         return data["candidates"][0]["content"]["parts"][0]["text"]

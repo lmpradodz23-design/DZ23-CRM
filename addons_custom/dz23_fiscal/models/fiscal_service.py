@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Serviço de emissão de NF-e.
 # ROTA 1 (ADR-002): DESATIVADO até existir um adapter homologado por provedor.
 # Não há endpoint genérico nem payload "faz-de-conta": qualquer tentativa de
@@ -31,9 +30,11 @@ class DZ23Fiscal(models.AbstractModel):
     @api.model
     def emit(self, invoice):
         """Fail-closed: emissão indisponível até adapter homologado (ADR-002)."""
-        raise UserError(_(
-            "Emissão de NF-e não está disponível. O recurso fiscal está "
-            "desativado até existir um adapter homologado por provedor "
-            "(certificado e-CNPJ A1 + conta do provedor + homologação SEFAZ + "
-            "validação contábil). Ver docs/adr/ADR-002-odoo-version-brazil.md."
-        ))
+        raise UserError(
+            _(
+                "Emissão de NF-e não está disponível. O recurso fiscal está "
+                "desativado até existir um adapter homologado por provedor "
+                "(certificado e-CNPJ A1 + conta do provedor + homologação SEFAZ + "
+                "validação contábil). Ver docs/adr/ADR-002-odoo-version-brazil.md."
+            )
+        )

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Provas adversariais de isolamento multi-tenant do dz23.channel:
 # um usuário comum da empresa A não enxerga nem lê canais da empresa B.
 from odoo.exceptions import AccessError
@@ -15,11 +14,15 @@ class TestChannelTenancy(TransactionCase):
         Ch = self.env["dz23.channel"]
         self.chA = Ch.create({"name": "Canal A", "company_id": self.cA.id, "provider": "evolution"})
         self.chB = Ch.create({"name": "Canal B", "company_id": self.cB.id, "provider": "evolution"})
-        self.userA = self.env["res.users"].create({
-            "name": "Usuário A", "login": "ua_dz23_test",
-            "company_id": self.cA.id, "company_ids": [(6, 0, [self.cA.id])],
-            "group_ids": [(6, 0, [self.env.ref("base.group_user").id])],
-        })
+        self.userA = self.env["res.users"].create(
+            {
+                "name": "Usuário A",
+                "login": "ua_dz23_test",
+                "company_id": self.cA.id,
+                "company_ids": [(6, 0, [self.cA.id])],
+                "group_ids": [(6, 0, [self.env.ref("base.group_user").id])],
+            }
+        )
 
     def test_search_hides_other_company(self):
         visiveis = self.env["dz23.channel"].with_user(self.userA).search([])
@@ -39,6 +42,7 @@ class TestChannelTenancy(TransactionCase):
         # Mesma instância Evolution em dois canais é proibida (validação dispara
         # antes do SQL): esperamos ValidationError.
         from odoo.exceptions import ValidationError
+
         self.chA.evo_instance = "inst_dup"
         self.chA.flush_recordset()
         with self.assertRaises(ValidationError):

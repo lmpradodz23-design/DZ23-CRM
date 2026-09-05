@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from . import controllers
 
 
@@ -8,6 +7,7 @@ def post_init_hook(env):
     Defensivo: se a API mudar, registra no log e não interrompe a instalação.
     """
     import logging
+
     _logger = logging.getLogger(__name__)
     lang_code = "pt_BR"
     try:
@@ -44,8 +44,11 @@ def post_init_hook(env):
             br = env.ref("base.br", raise_if_not_found=False)
             if br:
                 vals["country_id"] = br.id
-            brl = env["res.currency"].with_context(active_test=False).search(
-                [("name", "=", "BRL")], limit=1)
+            brl = (
+                env["res.currency"]
+                .with_context(active_test=False)
+                .search([("name", "=", "BRL")], limit=1)
+            )
             if brl:
                 if not brl.active:
                     brl.sudo().write({"active": True})

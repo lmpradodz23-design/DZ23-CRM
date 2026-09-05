@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Serviço legado/compat de WhatsApp. O envio e o processamento reais vivem em
 # dz23.channel (multi-tenant, por empresa). Aqui ficam: os parsers de payload
 # (stateless), o gancho _on_inbound legado e delegações de compat (send_text /
@@ -24,8 +23,7 @@ class DZ23WhatsApp(models.AbstractModel):
 
     def _default_channel(self):
         """Canal padrão da empresa atual (compat p/ chamadas legadas sem canal)."""
-        return self.env["dz23.channel"].search(
-            [("company_id", "=", self.env.company.id)], limit=1)
+        return self.env["dz23.channel"].search([("company_id", "=", self.env.company.id)], limit=1)
 
     # ---------- Entrada (inbound) ----------
     @api.model
@@ -62,8 +60,13 @@ class DZ23WhatsApp(models.AbstractModel):
         # fallback determinístico: hash do envelope (evita perder mensagem sem id)
         import hashlib
         import json as _json
-        return "h:" + hashlib.sha256(
-            _json.dumps(data, sort_keys=True, default=str).encode()).hexdigest()[:32]
+
+        return (
+            "h:"
+            + hashlib.sha256(_json.dumps(data, sort_keys=True, default=str).encode()).hexdigest()[
+                :32
+            ]
+        )
 
     # ---------- API pública ----------
     @api.model
@@ -94,8 +97,7 @@ class DZ23WhatsApp(models.AbstractModel):
             jid = key.get("remoteJid") or ""
             number = jid.split("@")[0]
             msg = d.get("message") or {}
-            text = (msg.get("conversation")
-                    or (msg.get("extendedTextMessage") or {}).get("text"))
+            text = msg.get("conversation") or (msg.get("extendedTextMessage") or {}).get("text")
             return number, text
         except Exception:  # noqa: BLE001
             return None, None

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # DZ23 CRM — WhatsApp plugável (adaptador por provedor).
 # Provedores: Meta WhatsApp Cloud API, Twilio, Evolution API.
 # Credenciais ficam em ir.config_parameter (servidor), NUNCA no código.

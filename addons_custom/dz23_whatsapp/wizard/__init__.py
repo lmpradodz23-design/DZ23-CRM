@@ -1,3 +1,1 @@
-# -*- coding: utf-8 -*-
-from . import whatsapp_compose
-from . import evolution_connect
+from . import evolution_connect, whatsapp_compose

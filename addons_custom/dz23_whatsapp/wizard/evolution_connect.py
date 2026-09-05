@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from odoo import fields, models
 from odoo.tools.translate import _
 
@@ -17,13 +16,20 @@ class DZ23EvolutionConnect(models.TransientModel):
         qr = res.get("qr") or ""
         if qr.startswith("data:"):
             qr = qr.split(",", 1)[-1]
-        self.write({
-            "instance": res.get("instance"),
-            "webhook": res.get("webhook"),
-            "qr_image": qr or False,
-            "info": _("Abra o WhatsApp no celular > Aparelhos conectados > Conectar aparelho e escaneie o QR.")
-            if qr else _("A instância pode já estar conectada (sem QR). Verifique no painel Evolution."),
-        })
+        self.write(
+            {
+                "instance": res.get("instance"),
+                "webhook": res.get("webhook"),
+                "qr_image": qr or False,
+                "info": _(
+                    "Abra o WhatsApp no celular > Aparelhos conectados > Conectar aparelho e escaneie o QR."
+                )
+                if qr
+                else _(
+                    "A instância pode já estar conectada (sem QR). Verifique no painel Evolution."
+                ),
+            }
+        )
 
     def action_refresh(self):
         self.ensure_one()

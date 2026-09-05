@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # DZ23 CRM — Hub de Integrações: cards com status, logo e link para cadastrar/
 # ativar cada API (fiscal, comunicação, pagamento, IA, marketplace).
 {

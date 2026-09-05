@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from odoo import fields, models
 
 # Woovi/OpenPix — endpoint único; o AppID (teste ou produção) diferencia o ambiente.

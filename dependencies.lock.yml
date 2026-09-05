@@ -1,0 +1,31 @@
+# DZ23 CRM — lock das dependências OCA (reprodutibilidade / supply chain).
+# SHAs capturados dos clones locais em 2026-09-05. O CI e o deploy devem
+# fazer checkout do commit EXATO (sem seguir a branch mutável 19.0).
+# Licenças: OCA em geral AGPL-3/LGPL-3 — conferir por módulo antes de embarcar
+# e registrar em THIRD_PARTY_NOTICES (implicações de AGPL em SaaS).
+version: 1
+oca:
+  - name: contract
+    repo: https://github.com/OCA/contract.git
+    branch: "19.0"
+    commit: f6f398760e075e0cb6e2f285f22d059b41a8826f
+    path: addons_oca/contract
+    license: AGPL-3/LGPL-3 (verificar por módulo)
+  - name: field-service
+    repo: https://github.com/OCA/field-service.git
+    branch: "19.0"
+    commit: 561b1389636ac26e0a9fd86509302f51b733cb6c
+    path: addons_oca/field-service
+    license: AGPL-3/LGPL-3 (verificar por módulo)
+  - name: helpdesk
+    repo: https://github.com/OCA/helpdesk.git
+    branch: "19.0"
+    commit: 74d165dfd1bd30c5603025386003909315638542
+    path: addons_oca/helpdesk
+    license: AGPL-3/LGPL-3 (verificar por módulo)
+  - name: sign
+    repo: https://github.com/OCA/sign.git
+    branch: "19.0"
+    commit: 3b768318bc5eaccb79535337478f49d59d17d0b1
+    path: addons_oca/sign
+    license: AGPL-3/LGPL-3 (verificar por módulo)

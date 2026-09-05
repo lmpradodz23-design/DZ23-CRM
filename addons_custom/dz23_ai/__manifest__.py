@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # DZ23 CRM — IA integrada (texto + visão), com opção GRÁTIS/local (Ollama)
 # e provedores free-tier/pagos. Chaves ficam em Ajustes (servidor), nunca no código.
 {
