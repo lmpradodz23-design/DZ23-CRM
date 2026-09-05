@@ -81,9 +81,11 @@ class DZ23MessageInbox(models.Model):
     @api.model
     def _cron_process(self):
         """Reivindica lote pendente/devido com FOR UPDATE SKIP LOCKED e processa."""
+        # clock_timestamp() = hora REAL (não o transaction_timestamp de now()),
+        # correto para "está vencido agora" mesmo em transações longas (testes).
         self.env.cr.execute("""
             SELECT id FROM dz23_message_inbox
-            WHERE status IN ('pending', 'failed') AND next_attempt_at <= now()
+            WHERE status IN ('pending', 'failed') AND next_attempt_at <= clock_timestamp()
             ORDER BY id LIMIT %s FOR UPDATE SKIP LOCKED
         """, (_BATCH,))
         ids = [r[0] for r in self.env.cr.fetchall()]

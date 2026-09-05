@@ -17,27 +17,39 @@ from odoo.addons.dz23_whatsapp.models.whatsapp_channel import _digits, _e164_br
 _logger = logging.getLogger(__name__)
 
 _DEFAULT_PROMPT = (
-    "Você é a Sofia, atendente da equipe (uma pessoa de verdade do atendimento), "
-    "conversando pelo WhatsApp. Fale como gente: calorosa, simpática, natural e "
-    "direta, em português do Brasil, com no máximo 2 ou 3 frases curtas por mensagem. "
-    "Pode usar no máximo 1 emoji quando combinar. "
-    "NUNCA diga que é uma inteligência artificial, robô, modelo de linguagem ou "
-    "assistente virtual, e nunca peça desculpas por 'não ter informação em tempo real': "
-    "você é do time e resolve. Seu papel é entender o que a pessoa precisa, apresentar "
-    "produtos/serviços e preços com base no catálogo abaixo, tirar dúvidas, ajudar a "
-    "fechar a venda e marcar horário quando fizer sentido. Se não souber um detalhe, diga "
-    "que vai confirmar e conduza a conversa com uma pergunta. Atenda qualquer ramo "
-    "(salão, loja, clínica, oficina, serviços) usando SEMPRE o contexto da empresa abaixo. "
-    "Não invente itens ou preços que não estejam no catálogo."
+    "Você é a Sofia, assistente virtual da equipe de atendimento, conversando pelo "
+    "WhatsApp. Seja calorosa, simpática, natural e direta, em português do Brasil, "
+    "com no máximo 2 ou 3 frases curtas por mensagem, até 1 emoji quando combinar. "
+    "Se perguntarem, assuma com naturalidade que é uma assistente virtual do time — "
+    "não finja ser humana, mas também não seja robótica. Seu papel é entender a "
+    "necessidade, apresentar produtos/serviços e preços com base APENAS no catálogo "
+    "abaixo, tirar dúvidas e conduzir para fechar a venda ou marcar horário. Nunca "
+    "invente itens, preços ou disponibilidade que não estejam no catálogo; se não "
+    "souber, diga que vai confirmar e faça uma pergunta. Atenda qualquer ramo (salão, "
+    "loja, clínica, oficina, serviços) usando sempre o contexto da empresa abaixo."
 )
-_SCHED_RE = re.compile(r"agend|marc|hor[aá]rio|reuni|consulta|atend|hor[aá]rios", re.IGNORECASE)
+# Intenção de AGENDAR (marcar horário).
+_SCHED_RE = re.compile(r"agend|marc|hor[aá]rio|reuni|consulta|atend", re.IGNORECASE)
+# PERGUNTA de preço (NÃO cria pedido).
+_PRICE_RE = re.compile(r"pre[çc]o|valor|quanto\s+custa|quanto\s+[ée]|tabela", re.IGNORECASE)
+# CONFIRMAÇÃO de compra (cria orçamento) — exige intenção explícita.
 _BUY_RE = re.compile(
-    r"compr|pre[çc]o|valor|quanto\s+custa|or[çc]amento|pedido|adquirir|contratar|"
-    r"quero\s+(?:o|a|um|uma|comprar)|me\s+v[eê]nd", re.IGNORECASE)
+    r"quero\s+comprar|vou\s+(?:comprar|levar|querer)|pode\s+fechar|fecha[r]?\b|"
+    r"confirm|fazer\s+o\s+pedido|quero\s+fechar|bora\s+fechar|adquirir|contratar",
+    re.IGNORECASE)
+# Palavras de hora explícita (para não assumir 09:00 silenciosamente).
+_TIME_RE = re.compile(r"\b(\d{1,2})(?:[:hHed]\s?(\d{2}))?\s*(?:h|hs|horas?|:00)?\b")
 
 
 def _strip_html(v):
     return re.sub(r"<[^>]+>", " ", v or "").strip()
+
+
+def _norm(s):
+    """Normaliza acentos/caixa para casamento robusto de produtos."""
+    import unicodedata
+    s = unicodedata.normalize("NFKD", (s or "").lower())
+    return "".join(c for c in s if not unicodedata.combining(c))
 
 
 class DZ23ChannelAgent(models.Model):
@@ -108,46 +120,95 @@ class DZ23ChannelAgent(models.Model):
             blocks.append(_("Histórico recente da conversa:\n%s") % history)
         return "\n\n".join(blocks)
 
-    # ---- detecção de intenção --------------------------------------------
-    def _agent_parse_datetime(self, text):
-        m = re.search(r"(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?(?:\D{0,8}(\d{1,2})(?::(\d{2}))?)?", text or "")
-        if not m:
-            return False
-        import datetime as dt
-        now = fields.Datetime.now()
-        day, month = int(m.group(1)), int(m.group(2))
-        year = int(m.group(3)) if m.group(3) else now.year
-        if year < 100:
-            year += 2000
-        hour = int(m.group(4)) if m.group(4) else 9
-        minute = int(m.group(5)) if m.group(5) else 0
+    # ---- agenda: parsing DETERMINÍSTICO (não assume hora) -----------------
+    def _agent_company_tz(self):
+        import pytz
+        name = self.company_id.partner_id.tz or self.env.user.tz or "America/Sao_Paulo"
         try:
-            return dt.datetime(year, month, day, hour, minute)
-        except ValueError:
-            return False
+            return pytz.timezone(name)
+        except Exception:  # noqa: BLE001
+            return pytz.timezone("America/Sao_Paulo")
 
-    def _agent_match_product(self, text):
-        t = (text or "").lower()
+    @staticmethod
+    def _parse_time_tuple(text):
+        """Extrai (hora, minuto) SÓ se houver hora explícita; senão None."""
+        m = re.search(r"\b(\d{1,2})[:h](\d{2})\b", text or "")
+        if m:
+            return int(m.group(1)), int(m.group(2))
+        m = re.search(r"\b(\d{1,2})\s*h\b", text or "") or re.search(r"[àa]s\s*(\d{1,2})\b", text or "")
+        if m:
+            return int(m.group(1)), 0
+        return None
+
+    def _agent_parse_when(self, text):
+        """Retorna dict: has_date, valid, date, time(ou None). Nunca assume 09:00."""
+        import datetime as dt
+        today = fields.Date.context_today(self)
+        t = _norm(text)
+        date = None
+        md = re.search(r"(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?", text or "")
+        if md:
+            day, month = int(md.group(1)), int(md.group(2))
+            year = int(md.group(3)) if md.group(3) else today.year
+            if year < 100:
+                year += 2000
+            try:
+                date = dt.date(year, month, day)
+            except ValueError:
+                return {"has_date": True, "valid": False}
+        elif "depois de amanha" in t:
+            date = today + dt.timedelta(days=2)
+        elif "amanha" in t:
+            date = today + dt.timedelta(days=1)
+        elif "hoje" in t:
+            date = today
+        if not date:
+            return {"has_date": False}
+        return {"has_date": True, "valid": True, "date": date,
+                "time": self._parse_time_tuple(text)}
+
+    def _agent_slot_conflict(self, start_utc, minutes=60):
+        """True se já existe evento sobrepondo o intervalo (evita double-booking)."""
+        stop = start_utc + timedelta(minutes=minutes)
+        return bool(self.env["calendar.event"].search([
+            ("start", "<", fields.Datetime.to_string(stop)),
+            ("stop", ">", fields.Datetime.to_string(start_utc)),
+        ], limit=1))
+
+    def _agent_local_to_utc(self, date, hour, minute):
+        import datetime as dt
+        import pytz
+        aware = self._agent_company_tz().localize(dt.datetime.combine(date, dt.time(hour, minute)))
+        return aware.astimezone(pytz.utc).replace(tzinfo=None), aware
+
+    # ---- venda: casamento DETERMINÍSTICO (acentos + limite de palavra) -----
+    def _agent_match_products(self, text):
+        t = _norm(text)
+        out = []
         for p in self._agent_catalog():
-            name = (p.name or "").lower().strip()
-            if len(name) >= 3 and name in t:
-                return p
-        return False
+            name = _norm(p.name)
+            if len(name) < 3:
+                continue
+            if len(name) <= 4:
+                hit = bool(re.search(r"\b%s\b" % re.escape(name), t))
+            else:
+                hit = name in t
+            if hit:
+                out.append(p)
+        return out
 
     # ---- ações (na empresa do canal) -------------------------------------
-    def _agent_create_event(self, lead, when):
+    def _agent_create_event(self, lead, start_utc):
         self.env["calendar.event"].create({
             "name": _("Agendamento WhatsApp — %s") % (lead.contact_name or lead.name),
-            "start": fields.Datetime.to_string(when),
-            "stop": fields.Datetime.to_string(when + timedelta(hours=1)),
+            "start": fields.Datetime.to_string(start_utc),
+            "stop": fields.Datetime.to_string(start_utc + timedelta(hours=1)),
             "partner_ids": [(4, lead.partner_id.id)] if lead.partner_id else [],
             "opportunity_id": lead.id if lead._name == "crm.lead" else False,
         })
-        lead.message_post(body=_("📅 Evento criado para %s (sincroniza com Google Calendar)")
-                          % when.strftime("%d/%m/%Y %H:%M"))
 
     def _agent_create_quote(self, lead, product):
-        if "sale.order" not in self.env:
+        if "sale.order" not in self.env or not product.sale_ok:
             return False
         partner = self._agent_partner_for(lead)
         so = self.env["sale.order"].create({
@@ -164,37 +225,34 @@ class DZ23ChannelAgent(models.Model):
         try:
             return self.env["dz23.ai"].chat(text, system=self._agent_system_prompt(lead))
         except Exception as e:  # noqa: BLE001 - IA pode não estar configurada
-            _logger.info("Agente: IA indisponível (%s), usando resposta padrão.", type(e).__name__)
+            _logger.info("Agente: IA indisponível (%s), usando padrão.", type(e).__name__)
             return fallback
 
-    # ---- pipeline principal (sobrescreve o gancho do canal) ---------------
+    def _cur(self):
+        return self.company_id.currency_id.symbol or "R$"
+
+    # ---- pipeline principal (determinístico; LLM só conversa) -------------
     def handle_inbound(self, number, text, raw=None):
         self.ensure_one()
         if not self.agent_autoreply:
             return super().handle_inbound(number, text, raw)
-
         lead = self._agent_find_lead(number)
         lead.message_post(body=_("📩 WhatsApp recebido de %s: %s") % (number, text))
+        txt = text or ""
 
-        when = self._agent_parse_datetime(text) if _SCHED_RE.search(text or "") else False
-        if when:
-            self._agent_create_event(lead, when)
-            reply = _("Perfeito! Agendei para %s. Se precisar remarcar, é só falar. 💙 DZ23") % (
-                when.strftime("%d/%m/%Y às %H:%M"))
+        # 1) AGENDA — só cria com data E hora explícitas, futuro e sem conflito.
+        if _SCHED_RE.search(txt):
+            reply = self._handle_schedule(lead, txt)
+        # 2) COMPRA — só com confirmação explícita e produto não-ambíguo.
+        elif _BUY_RE.search(txt):
+            reply = self._handle_buy(lead, txt)
+        # 3) PREÇO — informa, NUNCA cria pedido.
+        elif _PRICE_RE.search(txt):
+            reply = self._handle_price(lead, txt)
+        # 4) Conversa geral via IA.
         else:
-            product = self._agent_match_product(text) if _BUY_RE.search(text or "") else False
-            quote = self._agent_create_quote(lead, product) if product else False
-            if quote:
-                fallback = _(
-                    "Boa escolha! Anotei seu pedido de %s (%s %.2f). "
-                    "Posso confirmar para você fechar? 💙 DZ23") % (
-                    product.name, self.company_id.currency_id.symbol or "R$",
-                    product.list_price or 0.0)
-            else:
-                fallback = _(
-                    "Oi! Já vi sua mensagem por aqui 😊 Me conta rapidinho o que você "
-                    "precisa que eu te ajudo agora mesmo.")
-            reply = self._agent_reply_ai(lead, text, fallback)
+            reply = self._agent_reply_ai(lead, txt, _(
+                "Oi! Já vi sua mensagem 😊 Me conta o que você precisa que eu te ajudo."))
 
         try:
             self.send_text(number, reply)
@@ -203,3 +261,56 @@ class DZ23ChannelAgent(models.Model):
             lead.message_post(body=_("⚠️ Resposta gerada mas não enviada agora (%s): %s")
                               % (type(e).__name__, reply))
         return True
+
+    def _handle_schedule(self, lead, txt):
+        w = self._agent_parse_when(txt)
+        if not w.get("has_date"):
+            return _("Claro! Para qual dia você gostaria de marcar? 😊")
+        if not w.get("valid"):
+            return _("Não consegui entender essa data. Pode confirmar o dia (ex.: 15/09)?")
+        if not w.get("time"):
+            return _("Perfeito, dia %s! Qual horário fica melhor pra você?") % (
+                w["date"].strftime("%d/%m"))
+        hour, minute = w["time"]
+        try:
+            start_utc, aware = self._agent_local_to_utc(w["date"], hour, minute)
+        except ValueError:
+            return _("Esse horário não parece válido. Pode confirmar dia e hora?")
+        if start_utc <= fields.Datetime.now():
+            return _("Esse horário já passou 😅 Me passa uma data e hora futuras?")
+        if self._agent_slot_conflict(start_utc):
+            return _("Esse horário já está reservado 🙈 Quer tentar outro horário?")
+        self._agent_create_event(lead, start_utc)
+        lead.message_post(body=_("📅 Evento criado para %s (sincroniza com Google Calendar)")
+                          % aware.strftime("%d/%m/%Y %H:%M"))
+        return _("Prontinho! Agendei para %s. Se precisar remarcar, é só falar 💙") % (
+            aware.strftime("%d/%m/%Y às %H:%M"))
+
+    def _handle_buy(self, lead, txt):
+        matches = self._agent_match_products(txt)
+        if len(matches) == 1:
+            p = matches[0]
+            so = self._agent_create_quote(lead, p)
+            if so:
+                return _("Boa escolha! Registrei seu pedido de %s (%s %.2f). "
+                         "Posso seguir com a confirmação? 💙") % (
+                    p.name, self._cur(), p.list_price or 0.0)
+            return _("Consigo te ajudar com %s — me confirma que já registro.") % p.name
+        if len(matches) > 1:
+            nomes = ", ".join(m.name for m in matches[:5])
+            return _("Temos algumas opções: %s. Qual delas você quer? 😊") % nomes
+        return self._agent_reply_ai(lead, txt, _(
+            "Me diz qual produto ou serviço você quer que eu já organizo pra você."))
+
+    def _handle_price(self, lead, txt):
+        matches = self._agent_match_products(txt)
+        if len(matches) == 1:
+            p = matches[0]
+            return _("O %s fica %s %.2f. Quer que eu já reserve pra você? 😊") % (
+                p.name, self._cur(), p.list_price or 0.0)
+        if len(matches) > 1:
+            nomes = ", ".join("%s (%s %.2f)" % (m.name, self._cur(), m.list_price or 0.0)
+                              for m in matches[:5])
+            return _("Temos: %s. Sobre qual quer saber? ") % nomes
+        return self._agent_reply_ai(lead, txt, _(
+            "Me diz qual item você quer saber o preço que eu te falo certinho."))
