@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Campo AppID no formulário do provedor (visível/obrigatório quando Woovi) -->
+    <record id="payment_provider_form_woovi" model="ir.ui.view">
+        <field name="name">payment.provider.form.woovi</field>
+        <field name="model">payment.provider</field>
+        <field name="inherit_id" ref="payment.payment_provider_form"/>
+        <field name="arch" type="xml">
+            <group name="provider_credentials" position="inside">
+                <group invisible="code != 'woovi'">
+                    <field name="woovi_app_id"
+                           required="code == 'woovi' and state != 'disabled'"
+                           password="True"/>
+                </group>
+            </group>
+        </field>
+    </record>
+</odoo>

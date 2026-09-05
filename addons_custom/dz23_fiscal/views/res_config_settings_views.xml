@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="dz23_fiscal_res_config_settings_view" model="ir.ui.view">
+        <field name="name">dz23.fiscal.res.config.settings</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app string="DZ23 NF-e" name="dz23_fiscal">
+                    <block title="Provedor de NF-e"
+                           help="A emissão exige certificado e-CNPJ A1 enviado ao provedor + validação contábil.">
+                        <setting string="Provedor e token">
+                            <div class="content-group">
+                                <field name="dz23_nfe_provider"/>
+                                <field name="dz23_nfe_token" password="True" placeholder="token do provedor"/>
+                                <field name="dz23_nfe_base" placeholder="URL base (sandbox/produção)"/>
+                            </div>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+</odoo>

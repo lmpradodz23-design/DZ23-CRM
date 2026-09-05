@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Provedor e token definidos em Ajustes (servidor). Sem provedor,
+             a emissão fica bloqueada com mensagem clara ao usuário. -->
+    </data>
+</odoo>

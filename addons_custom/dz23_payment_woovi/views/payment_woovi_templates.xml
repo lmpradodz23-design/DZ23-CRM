@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Formulário inline exibido ao cliente: QR Code PIX + copia-e-cola -->
+    <template id="woovi_inline_form">
+        <div class="dz23-woovi-pix text-center">
+            <img t-if="woovi_qr_code_image" t-att-src="woovi_qr_code_image"
+                 alt="PIX QR Code" class="img-fluid mb-2" style="max-width: 220px;"/>
+            <p class="mb-1"><strong>PIX copia e cola</strong></p>
+            <textarea class="form-control" readonly="readonly" rows="3"
+                      t-esc="woovi_br_code"/>
+            <p class="text-muted small mt-2">
+                Pague pelo app do seu banco. A confirmação é automática.
+            </p>
+        </div>
+    </template>
+</odoo>

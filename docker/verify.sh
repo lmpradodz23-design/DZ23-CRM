@@ -13,7 +13,7 @@ echo "== Subindo stack =="
 docker compose up -d
 echo "== Inicializando base + módulos (primeira vez pode demorar) =="
 docker compose run --rm odoo odoo -d dz23crm \
-  -i base,dz23_branding,dz23_brasil_tools,dz23_crm,dz23_whatsapp \
+  -i base,dz23_branding,dz23_brasil_tools,dz23_crm,dz23_whatsapp,dz23_payment_woovi,dz23_fiscal \
   --load-language=pt_BR --stop-after-init || true
 docker compose up -d
 echo "== Aguardando Odoo responder =="
