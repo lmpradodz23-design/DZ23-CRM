@@ -53,6 +53,25 @@
 ## Gates
 lint/build(init)=PASS · funcional=PASS · segurança=PASS · CRITICAL=0 · HIGH=0.
 
+## Suíte instalada (grátis/legal) — E2E verificado 2026-09-05
+Nativos: crm, sale_management, purchase, stock, project, website_sale, mass_mailing,
+point_of_sale (recibo/cupom não fiscal), delivery/stock_delivery. Kanban nativo.
+OCA (19.0): helpdesk_mgmt, contract (assinaturas), sign_oca (assinatura digital),
+fieldservice. DZ23: branding, brasil_tools, crm, whatsapp, payment_woovi, fiscal,
+ai (Ollama local grátis + Groq/Gemini/OpenAI/Anthropic + Composio), integrations
+(hub de 27 integradores com passo-a-passo).
+Localização: BRL, país Brasil, fuso America/Sao_Paulo, pt-BR. Site/loja rebrandados.
+
+## E2E (servidor, 2026-09-05) — nenhum bug real
+- 15 views de apps carregam OK.
+- Venda completa: pedido→confirmar→entrega→fatura OK.
+- Compra: pedido→confirmar→recebimento OK.
+- Helpdesk/PDV(admin)/CNPJ-CEP ao vivo/webhooks fail-closed OK. 0 ERROR nos logs.
+
+## Melhorias executadas
+BRL/Brasil/fuso; rebrand do site (logo/nome/telefone DZ23); OdooBot→DZ23 Bot;
+grupos de gerente confirmados no admin.
+
 ## Blockers externos (honestos)
 - Woovi PIX ao vivo: sandbox/AppID + chave pública do webhook + URL pública.
 - NF-e emissão: certificado A1 + conta provedor + contador + adaptador por provedor.
