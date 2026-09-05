@@ -9,8 +9,10 @@ mkdir -p "$DEST"
 
 # repo -> equivalente open source do recurso Enterprise
 REPOS=(
-  "helpdesk"   # Central de Ajuda (Helpdesk)
-  "contract"   # Assinaturas / faturamento recorrente
+  "helpdesk"       # Central de Ajuda (Helpdesk)
+  "contract"       # Assinaturas / faturamento recorrente
+  "sign"           # Assinatura digital de documentos
+  "field-service"  # Ordens de serviço em campo (Field Service)
 )
 
 for repo in "${REPOS[@]}"; do

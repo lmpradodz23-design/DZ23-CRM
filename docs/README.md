@@ -15,11 +15,14 @@ DZ23-CRM/
 ## Subir o ambiente de teste (dev)
 Pré-requisitos: Docker Desktop rodando.
 ```bash
+bash scripts/fetch_oca.sh          # baixa apps OCA (open source) em addons_oca/
 cd docker
-cp ../.env.example ../.env   # e edite as senhas de DEV
+cp ../.env.example ../.env         # e edite as senhas de DEV
 docker compose up -d
-# Primeira vez: criar a base e instalar o módulo de branding
-docker compose run --rm odoo odoo -d dz23crm -i base,dz23_branding --stop-after-init
+# Primeira vez: criar a base e instalar o stack completo
+docker compose run --rm odoo odoo -d dz23crm \
+  -i base,crm,sale_management,purchase,stock,project,website_sale,mass_mailing,point_of_sale,delivery,stock_delivery,helpdesk_mgmt,contract,sign_oca,fieldservice,dz23_branding,dz23_brasil_tools,dz23_crm,dz23_whatsapp,dz23_payment_woovi,dz23_fiscal,dz23_ai \
+  --load-language=pt_BR --stop-after-init
 docker compose up -d
 ```
 Acesse http://localhost:8069  (base: `dz23crm`).

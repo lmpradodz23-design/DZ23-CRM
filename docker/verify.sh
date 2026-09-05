@@ -9,11 +9,13 @@ check() { # $1=descrição  $2=comando que retorna 0/1
   else echo "  [FALHA] $1"; fail=$((fail+1)); fi
 }
 
+echo "== Baixando módulos OCA (open source) =="
+bash ../scripts/fetch_oca.sh || true
 echo "== Subindo stack =="
 docker compose up -d
-echo "== Inicializando base + módulos (primeira vez pode demorar) =="
+echo "== Inicializando base + stack completo (primeira vez demora) =="
 docker compose run --rm odoo odoo -d dz23crm \
-  -i base,dz23_branding,dz23_brasil_tools,dz23_crm,dz23_whatsapp,dz23_payment_woovi,dz23_fiscal \
+  -i base,crm,sale_management,purchase,stock,project,website_sale,mass_mailing,point_of_sale,delivery,stock_delivery,helpdesk_mgmt,contract,sign_oca,fieldservice,dz23_branding,dz23_brasil_tools,dz23_crm,dz23_whatsapp,dz23_payment_woovi,dz23_fiscal,dz23_ai \
   --load-language=pt_BR --stop-after-init || true
 docker compose up -d
 echo "== Aguardando Odoo responder =="
