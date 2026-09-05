@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Padrão: IA local grátis (Ollama). O admin ajusta em Ajustes. -->
+        <record id="dz23_ai_provider_default" model="ir.config_parameter">
+            <field name="key">dz23.ai_provider</field>
+            <field name="value">ollama</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="dz23_ai_crm_lead_form" model="ir.ui.view">
+        <field name="name">dz23.ai.crm.lead.form</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button name="action_dz23_ai_summary" type="object"
+                        class="oe_stat_button" icon="fa-magic">
+                    <span class="o_stat_text">Resumir com IA</span>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>
