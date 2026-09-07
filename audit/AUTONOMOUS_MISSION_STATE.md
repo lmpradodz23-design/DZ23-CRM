@@ -67,7 +67,8 @@
 - tudo consolidado em `main` (ff de hardening/post-audit); gitleaks limpo (44 commits)
 - gh CLI: instalado no WSL (/usr/bin/gh v2.45.0) mas NAO autenticado
 
-## próxima ação (publicar público)
-1. usuário roda no WSL: `gh auth login` (GitHub.com > HTTPS > browser)
-2. eu publico: `wsl bash -lc "cd /mnt/c/Users/zodyp/DZ23-CRM && gh repo create DZ23-CRM --public --source=. --remote=origin --push"`
-   (compartilha a auth do mesmo usuário WSL)
+## PUBLICADO (2026-09-07) — MISSION_COMPLETED
+- Repositório PÚBLICO: https://github.com/lmpradodz23-design/DZ23-CRM (branch main)
+- Licença MIT (LICENSE puro + NOTICE); gh autenticado no WSL como lmpradodz23-design
+- Gate final comprovado: CRITICAL=0, HIGH=0; testes 33/33; ruff PASS; gitleaks 0; HTTP 200
+- estado: COMPLETED
