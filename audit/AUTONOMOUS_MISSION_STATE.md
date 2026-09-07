@@ -54,5 +54,13 @@
   = maintenance window + backup + go do usuário (não auto-aplicar, §14)
 - vhdx grande em disco: compactar exige desligar Docker (fazer por último)
 
+## FINAL_AUDIT concluída (2026-09-07)
+- 3 auditores independentes: A(arq) 1 HIGH, B(sec) 0 HIGH, C(qa) 2 HIGH.
+- Todos os 3 HIGH corrigidos + MEDIUM/LOW -> commit fce1012.
+- Relatório: audit/FINAL_THREE_AGENT_REVIEW_2026-09-07.md
+- GATE: CRITICAL=0, HIGH=0; testes 33/33 (0 failed/0 error); ruff PASS;
+  gitleaks 0 vazamentos (42 commits); Odoo vivo HTTP 200 com código novo.
+- estado: CANDIDATE_COMPLETED (verificado). Único item externo p/ 100%: push GitHub (falta URL do repo).
+
 ## próxima ação
-Consolidar 3 auditores -> corrigir CRITICAL/HIGH -> retestar -> push GitHub (com URL).
+Obter URL de repo GitHub PRIVADO do usuário -> git remote add origin <url> -> git push -u origin hardening/post-audit.
