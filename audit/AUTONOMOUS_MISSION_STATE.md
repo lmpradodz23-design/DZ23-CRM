@@ -38,5 +38,21 @@
   (2) rodar suíte dz23 completa (Ondas 4-6); (3) aplicar roles PG (com backup);
   (4) recriar ollama privado; (5) desativar IAP; (6) pin digests/actions + SBOM + CI.
 
+## progresso 2026-09-07 (Docker de volta)
+- testes Ondas 4-6: 33/33 PASS (evidência acima)
+- odoo reiniciado com código endurecido: HTTP 200 em /web/login
+- imagens pinadas por digest (odoo:19, postgres:16) — commit
+- IAP: DECISÃO ASSUMIDA — cron crm_iap_enrich.ir_cron_lead_enrichment (id 18)
+  DESATIVADO no dz23crm (reversível; evita gasto automático de créditos IAP)
+- Ollama: sem portas publicadas (MEDIUM-09 ok)
+- gitleaks: no leaks found (40 commits) — seguro p/ push
+- FINAL_AUDIT: 3 auditores (A arch, B sec, C qa) rodando
+
+## pendências honestas
+- push GitHub: sem remote/gh -> precisa URL de repo PRIVADO do usuário (BLOCKED_EXTERNAL)
+- PG role split (HIGH-03): roles criadas via script; TROCA de ownership + usuário runtime
+  = maintenance window + backup + go do usuário (não auto-aplicar, §14)
+- vhdx grande em disco: compactar exige desligar Docker (fazer por último)
+
 ## próxima ação
-Reiniciar Windows -> Docker sobe -> prune cache -> rodar testes das Ondas 4-6 -> aplicar itens de infra.
+Consolidar 3 auditores -> corrigir CRITICAL/HIGH -> retestar -> push GitHub (com URL).
