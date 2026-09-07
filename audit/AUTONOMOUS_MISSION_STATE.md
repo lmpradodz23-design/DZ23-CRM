@@ -3,7 +3,9 @@
 - mission_id: dz23-post-reaudit-2026-09-05
 - objetivo: fechar HIGH/MEDIUM da reauditoria (DZ23_CRM_REAUDITORIA_P0_ED39FAB) em 6 ondas, cada uma testada e commitada.
 - branch: hardening/post-audit (a partir de df75128)
-- estado: CANDIDATE_COMPLETED (código das 6 ondas commitado) · runtime/apply = BLOCKED_EXTERNAL (Docker caiu por disco cheio; requer reiniciar o Windows)
+- estado: EXECUTING (Docker de volta 2026-09-07; testes Ondas 4-6 = PASS 33/33; rumo a FINAL_AUDIT + push GitHub)
+- evidencia testes 2026-09-07: `0 failed, 0 error(s) of 33 tests` em dz23crm (dz23_agent 12, dz23_ai 7, dz23_whatsapp 24) com --workers=0 --http-port=8098
+- cache docker: build cache = 0B (179GB limpos no reinicio); vhdx grande em disco (compactar no fim)
 - critérios de aceite: gates locais verdes (testes dz23), isolamento cross-tenant provado sem sudo mascarar, idempotência (1 efeito por message_id), agente determinístico, privacidade IA, roles PG sem BYPASSRLS, /tmp/odoo.conf 0600, CI reprodutível; externos = BLOCKED_EXTERNAL.
 
 ## Ondas
