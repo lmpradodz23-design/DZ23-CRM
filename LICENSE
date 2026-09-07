@@ -19,13 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-Nota sobre dependencias (NAO incluidas neste repositorio):
-- Este projeto RODA sobre o Odoo Community, licenciado sob LGPL-3.0
-  (https://github.com/odoo/odoo) — o Odoo NAO e redistribuido aqui.
-- Modulos da OCA (baixados via scripts/fetch_oca.sh) tem suas proprias licencas
-  (AGPL-3/LGPL-3) e NAO fazem parte deste repositorio.
-Apenas o codigo original DZ23 (addons_custom/, docker/, scripts/, docs/) e
-licenciado sob MIT. "Odoo" e marca da Odoo S.A., usada apenas de forma nominativa.
