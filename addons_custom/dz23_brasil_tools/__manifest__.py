@@ -6,7 +6,7 @@
     "summary": "Autofill CNPJ/CEP, enriquecimento de lead, feriados e WhatsApp (wa.me) — APIs gratuitas.",
     "author": "DZ23 (LEANDRO MARCOS PRADO LTDA)",
     "website": "https://www.dz23.com.br",
-    "license": "LGPL-3",
+    "license": "MIT",
     "category": "Sales/CRM",
     "depends": ["contacts", "phone_validation"],
     "data": [

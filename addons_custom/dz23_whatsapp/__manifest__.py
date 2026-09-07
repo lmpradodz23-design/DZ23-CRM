@@ -7,7 +7,7 @@
     "summary": "WhatsApp multi-tenant por canal (Meta Cloud API / Twilio / Evolution).",
     "author": "DZ23 (LEANDRO MARCOS PRADO LTDA)",
     "website": "https://www.dz23.com.br",
-    "license": "LGPL-3",
+    "license": "MIT",
     "category": "Marketing",
     "depends": ["mail", "phone_validation", "sales_team"],
     "data": [

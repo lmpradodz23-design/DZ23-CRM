@@ -6,7 +6,7 @@
     "summary": "IA integrada: local grátis (Ollama), Groq/Gemini (free-tier), OpenAI/Anthropic. Texto e visão.",
     "author": "DZ23 (LEANDRO MARCOS PRADO LTDA)",
     "website": "https://www.dz23.com.br",
-    "license": "LGPL-3",
+    "license": "MIT",
     "category": "Productivity",
     "depends": ["base", "mail", "crm"],
     "data": [

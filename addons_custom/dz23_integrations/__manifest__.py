@@ -6,7 +6,7 @@
     "summary": "Central de integrações: cadastrar e ativar APIs (fiscal, comunicação, pagamento, IA, marketplace).",
     "author": "DZ23 (LEANDRO MARCOS PRADO LTDA)",
     "website": "https://www.dz23.com.br",
-    "license": "LGPL-3",
+    "license": "MIT",
     "category": "Tools",
     "depends": ["base_setup", "mail"],
     "data": [

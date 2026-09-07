@@ -5,7 +5,7 @@
     "summary": "Ajustes DZ23 no CRM: link rápido de WhatsApp (wa.me) no lead.",
     "author": "DZ23 (LEANDRO MARCOS PRADO LTDA)",
     "website": "https://www.dz23.com.br",
-    "license": "LGPL-3",
+    "license": "MIT",
     "category": "Sales/CRM",
     "depends": ["crm", "dz23_whatsapp"],
     "data": [
