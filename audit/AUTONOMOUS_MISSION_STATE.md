@@ -62,5 +62,12 @@
   gitleaks 0 vazamentos (42 commits); Odoo vivo HTTP 200 com código novo.
 - estado: CANDIDATE_COMPLETED (verificado). Único item externo p/ 100%: push GitHub (falta URL do repo).
 
-## próxima ação
-Obter URL de repo GitHub PRIVADO do usuário -> git remote add origin <url> -> git push -u origin hardening/post-audit.
+## open-source prep (2026-09-07)
+- licença MIT (LICENSE + 9 manifests); README com diferenciais vs Odoo original + 9 módulos
+- tudo consolidado em `main` (ff de hardening/post-audit); gitleaks limpo (44 commits)
+- gh CLI: instalado no WSL (/usr/bin/gh v2.45.0) mas NAO autenticado
+
+## próxima ação (publicar público)
+1. usuário roda no WSL: `gh auth login` (GitHub.com > HTTPS > browser)
+2. eu publico: `wsl bash -lc "cd /mnt/c/Users/zodyp/DZ23-CRM && gh repo create DZ23-CRM --public --source=. --remote=origin --push"`
+   (compartilha a auth do mesmo usuário WSL)
