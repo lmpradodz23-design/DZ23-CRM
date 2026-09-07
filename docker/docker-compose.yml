@@ -6,7 +6,8 @@
 # ingress de produção é um reverse proxy (ver docker-compose.prod.yml, à parte).
 services:
   db:
-    image: postgres:16
+    # Pinado por DIGEST (MEDIUM-07): reprodutível e resistente a tag mutável.
+    image: postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
@@ -19,7 +20,8 @@ services:
     restart: unless-stopped
 
   odoo:
-    image: odoo:19
+    # Pinado por DIGEST (MEDIUM-07). Atualize tag+digest juntos ao subir versão.
+    image: odoo:19@sha256:f99ffac95cb39a0924622ea4118481c95651d9c84187e5b30a21c2cc4419c7dd
     depends_on:
       - db
     ports:
