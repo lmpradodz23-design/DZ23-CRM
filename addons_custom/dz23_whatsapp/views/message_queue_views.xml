@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Filas duráveis: Inbox (recebidas) e Outbox (respostas), com DLQ visível
+         e botão de reprocessar (item 6 da auditoria de QA). Só admin. -->
+
+    <!-- ===== INBOX ===== -->
+    <record id="dz23_message_inbox_view_list" model="ir.ui.view">
+        <field name="name">dz23.message.inbox.list</field>
+        <field name="model">dz23.message.inbox</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="status == 'dead'" decoration-warning="status == 'failed'"
+                  decoration-muted="status == 'done'">
+                <field name="id"/>
+                <field name="company_id"/>
+                <field name="channel_id"/>
+                <field name="provider"/>
+                <field name="sender"/>
+                <field name="status"/>
+                <field name="attempts"/>
+                <field name="next_attempt_at"/>
+                <field name="error"/>
+                <button name="action_requeue" type="object" string="Reprocessar"
+                        icon="fa-refresh" invisible="status not in ('dead','failed')"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="dz23_message_inbox_view_form" model="ir.ui.view">
+        <field name="name">dz23.message.inbox.form</field>
+        <field name="model">dz23.message.inbox</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_requeue" type="object" string="Reprocessar"
+                            class="btn-primary" invisible="status not in ('dead','failed')"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="company_id"/>
+                            <field name="channel_id"/>
+                            <field name="provider"/>
+                            <field name="sender"/>
+                        </group>
+                        <group>
+                            <field name="status"/>
+                            <field name="attempts"/>
+                            <field name="max_attempts"/>
+                            <field name="next_attempt_at"/>
+                        </group>
+                    </group>
+                    <field name="error"/>
+                    <field name="text"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="dz23_message_inbox_action" model="ir.actions.act_window">
+        <field name="name">Inbox (recebidas)</field>
+        <field name="res_model">dz23.message.inbox</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ===== OUTBOX ===== -->
+    <record id="dz23_message_outbox_view_list" model="ir.ui.view">
+        <field name="name">dz23.message.outbox.list</field>
+        <field name="model">dz23.message.outbox</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="status == 'dead'" decoration-warning="status == 'failed'"
+                  decoration-muted="status == 'sent'">
+                <field name="id"/>
+                <field name="company_id"/>
+                <field name="channel_id"/>
+                <field name="recipient"/>
+                <field name="status"/>
+                <field name="attempts"/>
+                <field name="next_attempt_at"/>
+                <field name="error"/>
+                <button name="action_requeue" type="object" string="Reenviar"
+                        icon="fa-refresh" invisible="status not in ('dead','failed')"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="dz23_message_outbox_view_form" model="ir.ui.view">
+        <field name="name">dz23.message.outbox.form</field>
+        <field name="model">dz23.message.outbox</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_requeue" type="object" string="Reenviar"
+                            class="btn-primary" invisible="status not in ('dead','failed')"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="company_id"/>
+                            <field name="channel_id"/>
+                            <field name="recipient"/>
+                        </group>
+                        <group>
+                            <field name="status"/>
+                            <field name="attempts"/>
+                            <field name="max_attempts"/>
+                            <field name="next_attempt_at"/>
+                        </group>
+                    </group>
+                    <field name="error"/>
+                    <field name="body"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="dz23_message_outbox_action" model="ir.actions.act_window">
+        <field name="name">Outbox (respostas)</field>
+        <field name="res_model">dz23.message.outbox</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menus (sob "DZ23 WhatsApp", só admin) -->
+    <menuitem id="dz23_message_inbox_menu" name="Inbox (recebidas)"
+              parent="dz23_channel_menu_root" action="dz23_message_inbox_action"
+              sequence="20" groups="base.group_system"/>
+    <menuitem id="dz23_message_outbox_menu" name="Outbox (respostas)"
+              parent="dz23_channel_menu_root" action="dz23_message_outbox_action"
+              sequence="30" groups="base.group_system"/>
+</odoo>

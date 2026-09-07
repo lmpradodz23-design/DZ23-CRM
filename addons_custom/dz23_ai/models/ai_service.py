@@ -110,6 +110,15 @@ class DZ23AI(models.AbstractModel):
                     )
                     % provider
                 )
+            # Imagem não é redigível (uma foto de documento/RG vazaria PII crua);
+            # bloqueia envio de imagem a provedor externo. Use IA local p/ imagem.
+            if image_b64:
+                raise UserError(
+                    _(
+                        "Envio de imagem a provedor de IA externo está bloqueado "
+                        "por privacidade. Use o modelo local (Ollama) para imagens."
+                    )
+                )
             prompt = _redact_pii(prompt)
             system = _redact_pii(system)
         return fn(prompt, system, image_b64)

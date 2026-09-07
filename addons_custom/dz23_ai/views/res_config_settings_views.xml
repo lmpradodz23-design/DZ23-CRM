@@ -19,6 +19,10 @@
                                  help="Rode 'ollama serve' na máquina; sem custo de token.">
                             <field name="dz23_ai_ollama_base"/>
                         </setting>
+                        <setting string="Privacidade — IA externa (LGPD)"
+                                 help="Provedores externos só funcionam com este consentimento ligado. Dados saem com PII redigida. Local (Ollama) nunca é bloqueado.">
+                            <field name="dz23_ai_external_allowed"/>
+                        </setting>
                         <setting string="Chaves de API (opcional)">
                             <div class="content-group">
                                 <field name="dz23_ai_groq_key" password="True" placeholder="Groq (free-tier)"/>

@@ -187,7 +187,11 @@ class DZ23ChannelAgent(models.Model):
         return {"has_date": True, "valid": True, "date": date, "time": self._parse_time_tuple(text)}
 
     def _agent_slot_conflict(self, start_utc, minutes=60):
-        """True se já existe evento sobrepondo o intervalo (evita double-booking)."""
+        """True se já existe evento sobrepondo o intervalo (evita double-booking).
+        LIMITAÇÃO CONHECIDA (multi-tenant): calendar.event no Odoo 19 Community
+        NÃO tem company_id, então o conflito é medido globalmente. Hoje é
+        single-tenant (DZ23); isolar por empresa exigiria calendário-recurso por
+        empresa — a endereçar quando houver multi-tenant real (ver auditoria)."""
         stop = start_utc + timedelta(minutes=minutes)
         return bool(
             self.env["calendar.event"].search(
@@ -288,14 +292,13 @@ class DZ23ChannelAgent(models.Model):
                 _("Oi! Já vi sua mensagem 😊 Me conta o que você precisa que eu te ajudo."),
             )
 
-        try:
-            self.send_text(number, reply)
-            lead.message_post(body=_("🤖 Resposta enviada: %s") % reply)
-        except Exception as e:  # noqa: BLE001 - envio pode falhar sem provedor
-            lead.message_post(
-                body=_("⚠️ Resposta gerada mas não enviada agora (%s): %s")
-                % (type(e).__name__, reply)
-            )
+        # Entrega DURÁVEL (HIGH-01): o efeito de negócio já foi aplicado uma vez;
+        # a resposta é ENFILEIRADA na outbox e enviada por um worker com retry +
+        # DLQ. Assim, se o provedor cair no instante do envio, a resposta não é
+        # perdida — é reenviada, sem duplicar o efeito.
+        if reply:
+            self.env["dz23.message.outbox"].sudo()._enqueue(self, number, reply)
+            lead.message_post(body=_("🤖 Resposta enfileirada para envio: %s") % reply)
         return True
 
     def _handle_schedule(self, lead, txt):
@@ -333,8 +336,8 @@ class DZ23ChannelAgent(models.Model):
             so = self._agent_create_quote(lead, p)
             if so:
                 return _(
-                    "Boa escolha! Registrei seu pedido de %s (%s %.2f). "
-                    "Posso seguir com a confirmação? 💙"
+                    "Boa escolha! Preparei seu orçamento de %s (%s %.2f). "
+                    "Posso seguir com a confirmação do pedido? 💙"
                 ) % (p.name, self._cur(), p.list_price or 0.0)
             return _("Consigo te ajudar com %s — me confirma que já registro.") % p.name
         if len(matches) > 1:

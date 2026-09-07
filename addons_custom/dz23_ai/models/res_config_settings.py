@@ -21,6 +21,16 @@ class ResConfigSettings(models.TransientModel):
         help="Ex.: llama3.1 (Ollama), llama-3.3-70b-versatile (Groq), gpt-4o-mini…",
         config_parameter="dz23.ai_model",
     )
+    # Gate de privacidade (LGPD): provedores EXTERNOS (Groq/OpenAI/Gemini/
+    # Anthropic) só são usados se este consentimento estiver ligado. Local
+    # (Ollama) nunca é bloqueado. Sem isto, escolher um provedor externo não
+    # funciona — por segurança/privacidade dos dados dos clientes (HIGH-2).
+    dz23_ai_external_allowed = fields.Boolean(
+        "Permitir enviar dados a IA EXTERNA (consentimento/LGPD)",
+        help="Ao ligar, você confirma ter base legal para enviar dados (com PII "
+        "redigida) a provedores externos. Deixe desligado para usar só IA local.",
+        config_parameter="dz23.ai.external_allowed",
+    )
     dz23_ai_ollama_base = fields.Char(
         "Ollama base URL (local, grátis)",
         default="http://host.docker.internal:11434",

@@ -28,7 +28,7 @@ class DZ23Integration(models.Model):
     official_url = fields.Char("Painel oficial", help="Onde criar a conta e pegar a API.")
     how_to = fields.Html(
         "Como conectar",
-        sanitize=False,
+        sanitize=True,
         help="Passo a passo para obter e ativar a API desta integração.",
     )
     available = fields.Boolean(

@@ -5,7 +5,8 @@
 # separada da rede do banco do Odoo.
 services:
   evo-db:
-    image: postgres:16
+    # Pinado por digest (B-MED-2: supply chain / reprodutibilidade).
+    image: postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
     environment:
       POSTGRES_DB: evolution
       POSTGRES_USER: ${EVO_POSTGRES_USER:?defina EVO_POSTGRES_USER no .env}
@@ -17,13 +18,15 @@ services:
     restart: unless-stopped
 
   evo-redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:ff02b58f971e7d7d156a1267e283fcbbeee91773b6aa36c49dac28ecfe28eadf
     security_opt:
       - no-new-privileges:true
     restart: unless-stopped
 
   evolution-api:
-    image: evoapicloud/evolution-api:latest
+    # Pinado por digest — 'latest' é mutável e este serviço detém a sessão do
+    # WhatsApp e a AUTHENTICATION_API_KEY (B-MED-2).
+    image: evoapicloud/evolution-api:latest@sha256:966625532d9076a2381e973a271307d107e6f070450de3abeeea8bd18be07252
     depends_on:
       - evo-db
       - evo-redis

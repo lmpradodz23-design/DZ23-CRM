@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Worker da OUTBOX: envia as respostas enfileiradas pelo agente com
+         retry/backoff e DLQ (HIGH-01). Separado do inbox para que uma falha de
+         ENVIO não desfaça o efeito de negócio já aplicado. -->
+    <record id="cron_dz23_outbox_process" model="ir.cron">
+        <field name="name">DZ23: enviar outbox de WhatsApp</field>
+        <field name="model_id" ref="model_dz23_message_outbox"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_process()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

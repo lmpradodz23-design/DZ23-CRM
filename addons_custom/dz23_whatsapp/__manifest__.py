@@ -3,7 +3,7 @@
 # Credenciais ficam em ir.config_parameter (servidor), NUNCA no código.
 {
     "name": "DZ23 CRM — WhatsApp",
-    "version": "19.0.4.0.0",
+    "version": "19.0.5.0.0",
     "summary": "WhatsApp multi-tenant por canal (Meta Cloud API / Twilio / Evolution).",
     "author": "DZ23 (LEANDRO MARCOS PRADO LTDA)",
     "website": "https://www.dz23.com.br",
@@ -15,7 +15,9 @@
         "security/dz23_channel_rules.xml",
         "data/config_params.xml",
         "data/inbox_cron.xml",
+        "data/outbox_cron.xml",
         "views/dz23_channel_views.xml",
+        "views/message_queue_views.xml",
         "views/res_config_settings_views.xml",
         "wizard/whatsapp_compose_views.xml",
         "wizard/evolution_connect_views.xml",

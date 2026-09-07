@@ -83,7 +83,7 @@ class DZ23WhatsApp(models.AbstractModel):
         channel = self._default_channel()
         if not channel:
             raise UserError(_("Crie um Canal de WhatsApp (menu DZ23 WhatsApp) primeiro."))
-        return channel.action_evolution_connect()
+        return channel._evolution_provision()
 
     # ---------- Evolution: leitura de mensagem recebida ----------
     @api.model

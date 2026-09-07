@@ -9,7 +9,8 @@
 #   docker network connect dz23net dz23-ollama   # se ainda não estiver
 services:
   ollama:
-    image: ollama/ollama:0.5.7
+    # Pinado por digest da imagem em uso (B-MED-2). Atualize o digest ao subir versão.
+    image: ollama/ollama@sha256:32931b46719f673c05fdbaa81ccb26da18ea4a1c57590a754874ab28ba269eb2
     container_name: dz23-ollama
     ports:
       - "127.0.0.1:11434:11434"

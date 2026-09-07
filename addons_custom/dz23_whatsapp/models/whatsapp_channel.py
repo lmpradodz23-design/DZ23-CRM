@@ -103,37 +103,57 @@ class DZ23Channel(models.Model):
     # Token opaco que identifica o canal na URL do webhook (não é segredo de
     # autenticação — a auth é por apikey/app_secret do canal — mas evita expor
     # instância/empresa e permite rotear sem varredura global).
+    # groups=group_system: segredos legíveis só por admin (não por group_user
+    # comum via ORM/XML-RPC). O envio/webhook lê via sudo (MED-1).
     webhook_token = fields.Char(
         required=True,
         copy=False,
         index=True,
         readonly=True,
+        groups="base.group_system",
         default=lambda self: secrets.token_urlsafe(24),
     )
     # Segredo INDEPENDENTE da chave administrativa do provedor, usado só para
     # autenticar o callback (header X-DZ23-Callback). Rotacionável por canal.
     callback_secret = fields.Char(
-        required=True, copy=False, readonly=True, default=lambda self: secrets.token_urlsafe(32)
+        required=True,
+        copy=False,
+        readonly=True,
+        groups="base.group_system",
+        default=lambda self: secrets.token_urlsafe(32),
     )
 
     # Evolution
     evo_base = fields.Char("Evolution base URL")
     evo_instance = fields.Char("Evolution instance")
-    evo_apikey = fields.Char("Evolution apikey")
+    evo_apikey = fields.Char("Evolution apikey", groups="base.group_system")
     # Meta Cloud
     meta_phone_id = fields.Char("Meta phone_number_id")
-    meta_token = fields.Char("Meta token")
+    meta_token = fields.Char("Meta token", groups="base.group_system")
     meta_api_version = fields.Char("Meta API version", default="v20.0")
-    meta_app_secret = fields.Char("Meta App Secret")
-    meta_verify_token = fields.Char("Meta verify token")
+    meta_app_secret = fields.Char("Meta App Secret", groups="base.group_system")
+    meta_verify_token = fields.Char("Meta verify token", groups="base.group_system")
     # Twilio
     twilio_sid = fields.Char("Twilio SID")
-    twilio_token = fields.Char("Twilio token")
+    twilio_token = fields.Char("Twilio token", groups="base.group_system")
     twilio_from = fields.Char("Twilio from")
 
-    # Agente
-    agent_autoreply = fields.Boolean("Auto-resposta do agente", default=True)
-    agent_prompt = fields.Text("Personalidade/instruções do agente")
+    # Agente — o valor é POR CANAL; os Ajustes globais só definem o PADRÃO
+    # aplicado a canais NOVOS (evita o controle enganoso apontado no QA).
+    agent_autoreply = fields.Boolean(
+        "Auto-resposta do agente", default=lambda self: self._default_agent_autoreply()
+    )
+    agent_prompt = fields.Text(
+        "Personalidade/instruções do agente",
+        default=lambda self: (
+            self.env["ir.config_parameter"].sudo().get_param("dz23.agent.prompt", "")
+        ),
+    )
+
+    @api.model
+    def _default_agent_autoreply(self):
+        val = self.env["ir.config_parameter"].sudo().get_param("dz23.agent.autoreply", "1")
+        return (val or "1") not in ("0", "False", "false", "")
 
     _webhook_token_uniq = models.Constraint("unique(webhook_token)", "Token de webhook duplicado.")
     _provider_channel_uniq = models.Constraint(
@@ -225,11 +245,14 @@ class DZ23Channel(models.Model):
             raise UserError(_("Número de WhatsApp inválido."))
         if not body:
             raise UserError(_("Mensagem vazia."))
+        # Credenciais do canal são restritas a admin (groups=group_system); o
+        # envio roda como usuário técnico (bot) — por isso lê via sudo() aqui.
+        channel = self.sudo()
         return {
-            "evolution": self._send_evolution,
-            "meta_cloud": self._send_meta_cloud,
-            "twilio": self._send_twilio,
-        }[self.provider](to, body)
+            "evolution": channel._send_evolution,
+            "meta_cloud": channel._send_meta_cloud,
+            "twilio": channel._send_twilio,
+        }[channel.provider](to, body)
 
     def _post(self, url, **kwargs):
         try:
@@ -333,6 +356,22 @@ class DZ23Channel(models.Model):
         return "%s/dz23/whatsapp/%s/webhook/%s" % (base, kind, self.webhook_token)
 
     def action_evolution_connect(self):
+        """Botão do canal: abre o assistente de QR JÁ VINCULADO A ESTE canal
+        (corrige HIGH-1: antes retornava um dict cru e nunca exibia o QR; e o
+        caminho de Ajustes conectava o canal padrão, não o que está aberto)."""
+        self.ensure_one()
+        wiz = self.env["dz23.whatsapp.evolution"].create({"channel_id": self.id})
+        wiz._load_qr()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Conectar WhatsApp (Evolution)"),
+            "res_model": "dz23.whatsapp.evolution",
+            "res_id": wiz.id,
+            "view_mode": "form",
+            "target": "new",
+        }
+
+    def _evolution_provision(self):
         """Cria a instância (se preciso), configura o webhook tokenizado e devolve o QR."""
         self.ensure_one()
         if not self.evo_instance:

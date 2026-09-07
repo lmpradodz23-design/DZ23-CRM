@@ -7,3 +7,5 @@ access_dz23_channel_contact_user,dz23.channel.contact.user,model_dz23_channel_co
 access_dz23_channel_contact_manager,dz23.channel.contact.manager,model_dz23_channel_contact,base.group_system,1,1,1,1
 access_dz23_message_inbox_user,dz23.message.inbox.user,model_dz23_message_inbox,base.group_user,1,0,0,0
 access_dz23_message_inbox_manager,dz23.message.inbox.manager,model_dz23_message_inbox,base.group_system,1,1,1,1
+access_dz23_message_outbox_user,dz23.message.outbox.user,model_dz23_message_outbox,base.group_user,1,0,0,0
+access_dz23_message_outbox_manager,dz23.message.outbox.manager,model_dz23_message_outbox,base.group_system,1,1,1,1

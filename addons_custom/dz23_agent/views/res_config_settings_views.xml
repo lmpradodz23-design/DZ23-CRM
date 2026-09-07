@@ -8,11 +8,11 @@
             <xpath expr="//form" position="inside">
                 <app string="DZ23 Agente IA" name="dz23_agent">
                     <block title="Atendente automático de WhatsApp"
-                           help="Responde as mensagens recebidas com IA e agenda automaticamente na Agenda. Requer WhatsApp conectado e provedor de IA.">
-                        <setting string="Auto-resposta por IA" help="Ligar/desligar o atendente automático.">
+                           help="PADRÃO aplicado a NOVOS canais. Cada canal tem sua própria auto-resposta e instruções (edite no canal em DZ23 WhatsApp › Canais). Alterar aqui não muda canais já existentes.">
+                        <setting string="Auto-resposta por IA (padrão de novos canais)" help="Define o padrão ao criar um novo canal.">
                             <field name="dz23_agent_autoreply"/>
                         </setting>
-                        <setting string="Instruções do atendente">
+                        <setting string="Instruções do atendente (padrão de novos canais)">
                             <field name="dz23_agent_prompt" placeholder="Ex.: Você é o atendente do DZ23, cordial e objetivo..."/>
                         </setting>
                     </block>
