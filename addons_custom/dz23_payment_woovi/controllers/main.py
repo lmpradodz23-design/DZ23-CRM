@@ -12,6 +12,7 @@ from odoo.http import request
 _logger = logging.getLogger(__name__)
 
 _PUBKEY_PARAM = "dz23.woovi.webhook_pubkey"
+_MAX_BODY = 1024 * 1024  # 1 MiB: teto do corpo (evita DoS por payload grande)
 
 
 def _verify_woovi_signature(raw_body, signature_b64, pubkey_pem):
@@ -37,7 +38,12 @@ def _verify_woovi_signature(raw_body, signature_b64, pubkey_pem):
 class WooviController(http.Controller):
     @http.route("/payment/woovi/webhook", type="http", auth="public", methods=["POST"], csrf=False)
     def woovi_webhook(self, **_kwargs):
+        # Teto de corpo ANTES de qualquer processamento (endpoint público).
+        if (request.httprequest.content_length or 0) > _MAX_BODY:
+            return request.make_response("payload too large", status=413)
         raw = request.httprequest.get_data() or b""
+        if len(raw) > _MAX_BODY:
+            return request.make_response("payload too large", status=413)
         signature = request.httprequest.headers.get("x-webhook-signature", "")
         pubkey = request.env["ir.config_parameter"].sudo().get_param(_PUBKEY_PARAM, "")
 

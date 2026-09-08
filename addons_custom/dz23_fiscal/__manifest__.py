@@ -9,7 +9,7 @@
     "summary": "Emissão de NF-e via API de provedor (estrutura; emissão requer certificado+conta).",
     "author": "DZ23 (LEANDRO MARCOS PRADO LTDA)",
     "website": "https://www.dz23.com.br",
-    "license": "MIT",
+    "license": "Other OSI approved licence",
     "category": "Accounting",
     "depends": ["account"],
     "data": [

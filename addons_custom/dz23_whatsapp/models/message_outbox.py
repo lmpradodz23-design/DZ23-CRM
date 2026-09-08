@@ -2,6 +2,12 @@
 # (o efeito de negócio já foi aplicado exatamente uma vez pelo inbox); um worker
 # envia com retry exponencial + jitter e DLQ. Evita PERDER a resposta ao cliente
 # quando o provedor (Evolution/Meta/Twilio) está momentaneamente fora (HIGH-01).
+#
+# GARANTIA DE ENTREGA: at-least-once. Sucesso exige id de mensagem no corpo da
+# resposta do provedor (não só HTTP 2xx). Se o provedor entrega mas o ack se
+# perde (timeout após processar), pode haver reenvio (cliente recebe 2x). Os
+# provedores não recebem idempotency key hoje — LIMITAÇÃO CONHECIDA; mitigar com
+# clientMessageId derivado do outbox.id quando o provedor suportar dedupe.
 import logging
 import random
 from datetime import timedelta

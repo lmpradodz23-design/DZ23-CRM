@@ -14,9 +14,11 @@
         <xpath expr="//link[@rel='shortcut icon']" position="attributes">
             <attribute name="t-att-href">x_icon or '/dz23_branding/static/src/img/favicon.png'</attribute>
         </xpath>
-        <!-- Debrand total: esconde o promo "Powered by Odoo / Crie um site
-             grátis" (o CTA vem de website.brand_promotion) em TODAS as páginas
-             que usam web.layout, login incluído. -->
+        <!-- Debrand: esconde o promo "Powered by Odoo / Crie um site grátis"
+             (CTA de website.brand_promotion) em TODAS as páginas que usam
+             web.layout, login incluído. (O meta generator é injetado por outro
+             template do core e não está no web.layout — não dá para sobrescrever
+             aqui sem quebrar; é cosmético/source-only.) -->
         <xpath expr="//head" position="inside">
             <style>.o_brand_promotion, .o_brand_promotion_message { display: none !important; }</style>
         </xpath>

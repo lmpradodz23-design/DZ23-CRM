@@ -3,11 +3,11 @@
 # Credenciais ficam em ir.config_parameter (servidor), NUNCA no código.
 {
     "name": "DZ23 CRM — WhatsApp",
-    "version": "19.0.5.0.0",
+    "version": "19.0.6.0.0",
     "summary": "WhatsApp multi-tenant por canal (Meta Cloud API / Twilio / Evolution).",
     "author": "DZ23 (LEANDRO MARCOS PRADO LTDA)",
     "website": "https://www.dz23.com.br",
-    "license": "MIT",
+    "license": "Other OSI approved licence",
     "category": "Marketing",
     "depends": ["mail", "phone_validation", "sales_team"],
     "data": [

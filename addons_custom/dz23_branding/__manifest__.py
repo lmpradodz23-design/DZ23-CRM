@@ -8,7 +8,7 @@
     "author": "DZ23 (LEANDRO MARCOS PRADO LTDA)",
     "website": "https://www.dz23.com.br",
     # Obra derivada do Odoo (LGPLv3). A licença da base é mantida.
-    "license": "MIT",
+    "license": "Other OSI approved licence",
     "category": "Tools",
     "depends": ["web", "mail", "portal"],
     "data": [

@@ -7,7 +7,7 @@
     "summary": "Auto-resposta de WhatsApp por IA + agendamento automático na Agenda.",
     "author": "DZ23 (LEANDRO MARCOS PRADO LTDA)",
     "website": "https://www.dz23.com.br",
-    "license": "MIT",
+    "license": "Other OSI approved licence",
     "category": "Marketing",
     "depends": [
         "dz23_whatsapp",

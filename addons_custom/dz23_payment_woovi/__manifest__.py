@@ -8,7 +8,7 @@
     "summary": "Provedor de pagamento PIX via Woovi.",
     "author": "DZ23 (LEANDRO MARCOS PRADO LTDA)",
     "website": "https://www.dz23.com.br",
-    "license": "MIT",
+    "license": "Other OSI approved licence",
     "category": "Accounting/Payment Providers",
     "depends": ["payment"],
     "data": [

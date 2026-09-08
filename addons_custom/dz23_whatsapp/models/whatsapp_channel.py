@@ -272,9 +272,14 @@ class DZ23Channel(models.Model):
         if not (self.evo_base and self.evo_instance and self.evo_apikey):
             raise UserError(_("Canal Evolution incompleto (base/instância/apikey)."))
         url = "%s/message/sendText/%s" % (self.evo_base.rstrip("/"), self.evo_instance)
-        return self._post(
+        data = self._post(
             url, headers={"apikey": self.evo_apikey}, json={"number": to, "text": body}
         )
+        # Sucesso REAL exige id de mensagem no corpo — 2xx sem id é falha do
+        # provedor e deve reprocessar (não marcar "sent" e perder a resposta).
+        if not (data.get("key") or {}).get("id"):
+            raise UserError(_("Evolution não confirmou o envio (sem id de mensagem)."))
+        return data
 
     def _send_meta_cloud(self, to, body):
         if not (self.meta_token and self.meta_phone_id):
@@ -283,7 +288,7 @@ class DZ23Channel(models.Model):
             self.meta_api_version or "v20.0",
             self.meta_phone_id,
         )
-        return self._post(
+        data = self._post(
             url,
             headers={"Authorization": "Bearer %s" % self.meta_token},
             json={
@@ -293,6 +298,9 @@ class DZ23Channel(models.Model):
                 "text": {"body": body},
             },
         )
+        if not (data.get("messages") or [{}])[0].get("id"):
+            raise UserError(_("Meta não confirmou o envio (sem id de mensagem)."))
+        return data
 
     def _send_twilio(self, to, body):
         if not (self.twilio_sid and self.twilio_token and self.twilio_from):
@@ -303,11 +311,14 @@ class DZ23Channel(models.Model):
             if self.twilio_from.startswith("whatsapp:")
             else "whatsapp:%s" % self.twilio_from
         )
-        return self._post(
+        data = self._post(
             url,
             data={"From": frm, "To": "whatsapp:+%s" % to, "Body": body},
             auth=(self.twilio_sid, self.twilio_token),
         )
+        if not data.get("sid"):
+            raise UserError(_("Twilio não confirmou o envio (sem SID)."))
+        return data
 
     # ---------- inbound (base: só registra; dz23_agent sobrescreve) ----------
     def handle_inbound(self, number, text, raw=None):

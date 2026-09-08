@@ -36,5 +36,6 @@ def migrate(cr, version):
         "agent_prompt": ICP.get_param("dz23.agent.prompt") or False,
     }
     channel = Channel.create(vals)
-    _logger.info("dz23_whatsapp: canal '%s' criado (id=%s, token=%s) na migração.",
-                 channel.name, channel.id, channel.webhook_token)
+    # Não logar o webhook_token (token opaco de roteamento) — CLAUDE.md §6.
+    _logger.info("dz23_whatsapp: canal '%s' criado (id=%s) na migração.",
+                 channel.name, channel.id)
