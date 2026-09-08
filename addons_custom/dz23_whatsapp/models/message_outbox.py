@@ -52,6 +52,9 @@ class DZ23MessageOutbox(models.Model):
     max_attempts = fields.Integer(default=_MAX_ATTEMPTS)
     next_attempt_at = fields.Datetime(default=fields.Datetime.now, index=True)
     error = fields.Char()
+    provider_message_id = fields.Char(
+        readonly=True, help="Id da mensagem confirmado pelo provedor (rastreabilidade)."
+    )
 
     # ---------- enfileirar (chamado pelo agente após aplicar o efeito) ----------
     @api.model
@@ -94,8 +97,14 @@ class DZ23MessageOutbox(models.Model):
         self.ensure_one()
         try:
             with self.env.cr.savepoint():
-                self.channel_id._processing_self().send_text(self.recipient, self.body)
-                self.write({"status": "sent", "error": False})
+                data = self.channel_id._processing_self().send_text(self.recipient, self.body)
+                data = data if isinstance(data, dict) else {}
+                mid = (
+                    (data.get("key") or {}).get("id")
+                    or (data.get("messages") or [{}])[0].get("id")
+                    or data.get("sid")
+                )
+                self.write({"status": "sent", "error": False, "provider_message_id": mid or False})
         except Exception as e:  # noqa: BLE001
             attempts = self.attempts + 1
             if attempts >= self.max_attempts:

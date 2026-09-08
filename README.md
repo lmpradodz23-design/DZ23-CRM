@@ -9,7 +9,8 @@ por **módulos próprios** (nunca editando o núcleo).
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Base: Odoo 19](https://img.shields.io/badge/Base-Odoo%2019%20Community-875A7B.svg)](https://github.com/odoo/odoo)
 [![PT-BR](https://img.shields.io/badge/Idioma-Portugu%C3%AAs%20(BR)-009c3b.svg)](#)
-[![Tests](https://img.shields.io/badge/Testes%20dz23-33%2F33-brightgreen.svg)](#qualidade--seguran%C3%A7a)
+[![CI](https://github.com/lmpradodz23-design/DZ23-CRM/actions/workflows/ci.yml/badge.svg)](https://github.com/lmpradodz23-design/DZ23-CRM/actions/workflows/ci.yml)
+[![Testes](https://img.shields.io/badge/Testes%20dz23-verdes-brightgreen.svg)](#qualidade--seguran%C3%A7a)
 
 </div>
 
@@ -83,14 +84,18 @@ Acesse **http://localhost:8069** (base `dz23crm`). Detalhes e verificação em
 - **Lint/format**: `ruff` limpo. **Secret scan**: `gitleaks` sem vazamentos.
 - **Webhooks** autenticados e *fail-closed*; **segredos** só em `.env`/vault.
 - Auditoria de segurança e arquitetura documentada em [`audit/`](audit/).
-- Encontrou uma vulnerabilidade? Escreva para **contato@dz23.com.br** em vez de
-  abrir uma issue pública.
+- Política de divulgação e boas práticas em [SECURITY.md](SECURITY.md).
+  Encontrou uma vulnerabilidade? Escreva para **contato@dz23.com.br** (não abra
+  issue pública).
 
 ## Em construção (requer credenciais/passos externos)
 
 - **NF-e**: adaptador por provedor (Focus NFe / NFe.io / Nuvem Fiscal) — precisa de certificado A1 + conta.
 - **Woovi/PIX**: precisa de conta Woovi + webhook público.
-- **Isolamento de agenda multi-tenant**: `calendar.event` do Odoo CE não tem `company_id` (hoje single-tenant).
+
+> Entrega de resposta ao WhatsApp é *at-least-once* (o provedor pode, em raras
+> falhas de rede pós-envio, receber a mesma resposta 2×); o `provider_message_id`
+> é registrado para rastreio e dedup futura. Ver [CHANGELOG](CHANGELOG.md).
 
 ## Licença
 

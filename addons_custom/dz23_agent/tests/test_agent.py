@@ -80,6 +80,29 @@ class TestAgentDeterministic(TransactionCase):
         self.assertIn("reservado", r2.lower())
         self.assertEqual(self._events(), 1)
 
+    def test_conflict_isolated_by_company(self):
+        # Mesmo horário em OUTRA empresa NÃO deve bloquear (multi-tenant):
+        # o conflito é escopado por opportunity_id.company_id.
+        self.channel._handle_schedule(self.lead, "agendar 29/12/2099 as 08:00")
+        company_b = self.env["res.company"].create({"name": "Empresa B QA1"})
+        channel_b = self.env["dz23.channel"].create(
+            {
+                "name": "Canal B",
+                "company_id": company_b.id,
+                "provider": "evolution",
+                "evo_base": "http://x.local:8080",
+                "evo_instance": "agente_inst_b",
+                "evo_apikey": "K",
+            }
+        )
+        lead_b = channel_b._agent_find_lead("5561900000002")
+        r = channel_b._handle_schedule(lead_b, "agendar 29/12/2099 as 08:00")
+        # empresa B consegue agendar o mesmo horário (sem "reservado")
+        self.assertNotIn("reservado", r.lower())
+        self.assertEqual(
+            self.env["calendar.event"].search_count([("opportunity_id", "=", lead_b.id)]), 1
+        )
+
     # ----- venda -----
     def test_price_does_not_create_order(self):
         r = self.channel._handle_price(self.lead, "quanto custa o Servico Alfa QA1?")

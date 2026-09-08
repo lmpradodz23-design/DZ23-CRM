@@ -39,6 +39,7 @@ class TestMessageOutbox(TransactionCase):
         with patch(_SEND, return_value={"key": {"id": "X"}}):
             rec._process_one()
         self.assertEqual(rec.status, "sent")
+        self.assertEqual(rec.provider_message_id, "X")
 
     def test_process_failure_retries_then_dlq(self):
         rec = self.Outbox._enqueue(self.channel, "5561999990000", "oi")

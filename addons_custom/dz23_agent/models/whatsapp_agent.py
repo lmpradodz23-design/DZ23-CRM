@@ -188,16 +188,17 @@ class DZ23ChannelAgent(models.Model):
 
     def _agent_slot_conflict(self, start_utc, minutes=60):
         """True se já existe evento sobrepondo o intervalo (evita double-booking).
-        LIMITAÇÃO CONHECIDA (multi-tenant): calendar.event no Odoo 19 Community
-        NÃO tem company_id, então o conflito é medido globalmente. Hoje é
-        single-tenant (DZ23); isolar por empresa exigiria calendário-recurso por
-        empresa — a endereçar quando houver multi-tenant real (ver auditoria)."""
+        MULTI-TENANT: calendar.event no Odoo 19 CE não tem company_id, então
+        escopamos pelo company_id da oportunidade ligada ao evento
+        (opportunity_id.company_id) — todo evento do agente carrega o lead da
+        empresa do canal. Assim um horário do tenant B não bloqueia o tenant A."""
         stop = start_utc + timedelta(minutes=minutes)
         return bool(
             self.env["calendar.event"].search(
                 [
                     ("start", "<", fields.Datetime.to_string(stop)),
                     ("stop", ">", fields.Datetime.to_string(start_utc)),
+                    ("opportunity_id.company_id", "=", self.company_id.id),
                 ],
                 limit=1,
             )

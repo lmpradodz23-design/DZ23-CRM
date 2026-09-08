@@ -1,0 +1,42 @@
+name: "🐛 Bug"
+description: Relatar um erro no DZ23 CRM
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Obrigado por reportar! **Não** inclua senhas, tokens ou dados de clientes."
+  - type: textarea
+    id: what
+    attributes:
+      label: O que aconteceu
+      description: Descreva o problema e o impacto.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: |
+        1. Vá em ...
+        2. Clique em ...
+        3. Veja o erro ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versão / commit
+      placeholder: "ex.: main @ abc1234"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (sem segredos)
+      render: shell

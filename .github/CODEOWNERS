@@ -1,0 +1,9 @@
+# Donos padrão do código — revisão obrigatória do mantenedor.
+* @lmpradodz23-design
+
+# Áreas sensíveis
+/addons_custom/dz23_whatsapp/ @lmpradodz23-design
+/addons_custom/dz23_ai/       @lmpradodz23-design
+/docker/                      @lmpradodz23-design
+/.github/                     @lmpradodz23-design
+/SECURITY.md                  @lmpradodz23-design
