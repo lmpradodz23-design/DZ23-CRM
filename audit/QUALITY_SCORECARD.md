@@ -18,6 +18,9 @@ Critérios objetivos e verificáveis (2026-09-08, branch `main`).
 | Licença | MIT (código DZ23); manifests com enum válido do Odoo | ✅ | `LICENSE`, `NOTICE.md` |
 | Saúde OSS | README, SECURITY, CHANGELOG, CONTRIBUTING, templates, CODEOWNERS, dependabot | ✅ | raiz + `.github/` |
 | Runtime | Servidor vivo responde HTTP 200 com o código atual | ✅ | `curl /web/login` |
+| Entrega | Envio WhatsApp exatamente-uma-vez (guarda + commit por registro) | ✅ | `message_outbox.py`, `test_cron_sends_once_no_duplicate` |
+| Smoke E2E | Instalação do zero + suíte (41/41) em DB descartável | ✅ | `scripts/smoke.sh` |
+| Release | Tag `v*` gera SBOM + GitHub Release | ✅ | `.github/workflows/release.yml` |
 
 ## Limitações conhecidas (documentadas honestamente)
 - Entrega de resposta WhatsApp *at-least-once* (provedores sem idempotency key nativa; `provider_message_id` registrado).
