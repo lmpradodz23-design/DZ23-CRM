@@ -13,6 +13,7 @@ import random
 from datetime import timedelta
 
 from odoo import api, fields, models
+from odoo.tools import config
 from odoo.tools.translate import _
 
 _logger = logging.getLogger(__name__)
@@ -90,11 +91,22 @@ class DZ23MessageOutbox(models.Model):
         ids = [r[0] for r in self.env.cr.fetchall()]
         if not ids:
             return
+        in_test = config["test_enable"]
         for rec in self.browse(ids):
             rec._process_one()
+            # Commit por registro: se o cron morrer DEPOIS de enviar, o item já
+            # está persistido como 'sent' e NÃO é reenviado (reduz duplicidade —
+            # os provedores de WhatsApp não têm idempotency key nativa). O Odoo
+            # proíbe commit dentro de teste, então pulamos nesse caso (a guarda
+            # de 'sent'/provider_message_id garante o não-reenvio na mesma tx).
+            if not in_test:
+                self.env.cr.commit()
 
     def _process_one(self):
         self.ensure_one()
+        # Guarda: já enviado (id do provedor gravado) não reenvia.
+        if self.status == "sent" or self.provider_message_id:
+            return
         try:
             with self.env.cr.savepoint():
                 data = self.channel_id._processing_self().send_text(self.recipient, self.body)

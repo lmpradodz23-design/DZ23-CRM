@@ -54,6 +54,21 @@ class TestMessageOutbox(TransactionCase):
             self.assertEqual(rec.status, "dead", "vai para DLQ após max_attempts")
             self.assertEqual(rec.attempts, 2)
 
+    def test_cron_sends_once_no_duplicate(self):
+        # Envio EXATAMENTE UMA vez: após o cron marcar 'sent' e commitar, uma
+        # segunda passada NÃO reenvia (evita duplicidade).
+        self.Outbox._enqueue(self.channel, "5561999990000", "oi")
+        calls = {"n": 0}
+
+        def _ok(*a, **k):
+            calls["n"] += 1
+            return {"key": {"id": "X"}}
+
+        with patch(_SEND, side_effect=_ok):
+            self.Outbox._cron_process()
+            self.Outbox._cron_process()
+        self.assertEqual(calls["n"], 1, "o cron não pode reenviar um item já 'sent'")
+
     def test_requeue_from_dlq(self):
         rec = self.Outbox._enqueue(self.channel, "5561999990000", "oi")
         rec.write({"status": "dead", "attempts": 6})

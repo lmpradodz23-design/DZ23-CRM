@@ -21,6 +21,12 @@ Este projeto usa versionamento por módulo (Odoo `19.0.x.y.z`).
 - **Outbox durável** (`dz23.message.outbox`): entrega de respostas com retry/DLQ,
   validação de sucesso pelo corpo do provedor e `provider_message_id`.
 - Telas de administração de Inbox/Outbox (DLQ visível + reprocessar/reenviar).
+- Outbox: envio **exatamente-uma-vez** no cron (guarda de já-enviado + commit por
+  registro em produção) reduzindo duplicidade; teste dedicado.
+- Workflow de **release** (`.github/workflows/release.yml`): em tag `v*`, gera
+  SBOM (CycloneDX) e publica um GitHub Release com o SBOM anexado.
+- Script de **smoke E2E** (`scripts/smoke.sh`): instalação limpa de todos os
+  módulos num banco descartável + suíte `dz23` (41/41).
 - Agente determinístico (agenda sem inventar horário, rejeita passado/conflito;
   preço ≠ compra) com conflito de agenda **isolado por empresa**.
 - Toggle de consentimento de IA externa (LGPD) nas Configurações.

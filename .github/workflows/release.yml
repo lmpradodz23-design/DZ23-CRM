@@ -1,0 +1,32 @@
+name: Release
+
+# Dispara ao empurrar uma tag de versão (ex.: v1.0.0). Gera SBOM e publica um
+# GitHub Release com o SBOM anexado. Actions pinadas por SHA (supply chain).
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Gerar SBOM (CycloneDX)
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom.cyclonedx.json
+
+      - name: Criar GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "DZ23 CRM ${GITHUB_REF_NAME}" \
+            --notes "Notas em CHANGELOG.md. SBOM (CycloneDX) anexado." \
+            sbom.cyclonedx.json
